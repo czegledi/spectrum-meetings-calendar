@@ -1,0 +1,6341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spectrum Meetings Calendar</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --border: #2a2d3a;
+    --text: #e0e0e8;
+    --text-dim: #8888a0;
+    --itu-r: #4a9eff;
+    --ecc: #ff6b9d;
+    --wrc: #ffd700;
+    --cpg: #ff9f43;
+    --apt: #26de81;
+    --atu: #f7b731;
+    --citel: #45aaf2;
+    --ec: #a855f7;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+
+  header {
+    padding: 24px 32px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  header h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
+  header h1 span { color: var(--text-dim); font-weight: 400; }
+
+  .controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .filter-btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .filter-btn:hover { border-color: #555; color: var(--text); }
+  .filter-btn.active { border-color: var(--itu-r); color: var(--itu-r); background: rgba(74,158,255,0.08); }
+  .filter-btn.active.ecc { border-color: var(--ecc); color: var(--ecc); background: rgba(255,107,157,0.08); }
+  .filter-btn.active.wrc { border-color: var(--wrc); color: var(--wrc); background: rgba(255,215,0,0.08); }
+  .filter-btn.active.apt { border-color: var(--apt); color: var(--apt); background: rgba(38,222,129,0.08); }
+  .filter-btn.active.atu { border-color: var(--atu); color: var(--atu); background: rgba(247,183,49,0.08); }
+  .filter-btn.active.citel { border-color: var(--citel); color: var(--citel); background: rgba(69,170,242,0.08); }
+  .filter-btn.active.ec { border-color: var(--ec); color: var(--ec); background: rgba(168,85,247,0.08); }
+
+  .search-box {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    width: 200px;
+    font-family: inherit;
+  }
+  .search-box::placeholder { color: var(--text-dim); }
+  .search-box:focus { outline: none; border-color: var(--itu-r); }
+
+  .range-controls {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 4px;
+  }
+  .range-label {
+    font-size: 13px;
+    color: var(--text);
+    min-width: 80px;
+    text-align: center;
+    user-select: none;
+    font-weight: 500;
+  }
+  .zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 4px;
+  }
+  .zoom-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+  }
+  .zoom-btn:hover { background: var(--border); }
+  .zoom-level {
+    font-size: 12px;
+    color: var(--text-dim);
+    min-width: 40px;
+    text-align: center;
+    user-select: none;
+  }
+
+  .view-toggle {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .view-toggle button {
+    padding: 6px 14px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .view-toggle button.active { background: var(--border); color: var(--text); }
+  .view-toggle button + button { border-left: 1px solid var(--border); }
+
+  .timeline-container {
+    overflow-x: auto;
+    padding: 20px 32px;
+  }
+
+  .timeline {
+    position: relative;
+    min-width: 100%;
+  }
+
+  .header-block {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+    margin-bottom: 8px;
+  }
+  .month-headers {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+  .month-header {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    padding: 10px 0;
+    border-right: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .month-header.current { color: var(--itu-r); }
+
+  .week-headers {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+  .week-header {
+    text-align: center;
+    font-size: 10px;
+    font-weight: 500;
+    color: rgba(136,136,160,0.6);
+    padding: 4px 0;
+    border-right: 1px solid rgba(42,45,58,0.3);
+    flex-shrink: 0;
+  }
+  .week-header.current { color: var(--itu-r); font-weight: 700; }
+
+  .week-grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+  }
+  .week-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(42,45,58,0.5);
+  }
+
+  .today-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #ff4444;
+    z-index: 5;
+    opacity: 0.7;
+  }
+  .today-line::before {
+    content: 'TODAY';
+    position: absolute;
+    top: -20px;
+    left: -16px;
+    font-size: 9px;
+    color: #ff4444;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .org-section {
+    margin-bottom: 28px;
+  }
+  .org-label {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 14px 0 6px 0;
+    position: sticky;
+    left: 0;
+    z-index: 4;
+  }
+  .org-label.itu-r { color: var(--itu-r); }
+  .org-label.ecc { color: var(--ecc); }
+  .org-label.apt { color: var(--apt); }
+  .org-label.atu { color: var(--atu); }
+  .org-label.citel { color: var(--citel); }
+  .org-label.ec { color: var(--ec); }
+  .org-label.custom { color: #50c878; }
+
+  .meeting-row {
+    position: relative;
+    height: 28px;
+    margin-bottom: 3px;
+  }
+
+  .meeting-bar {
+    position: absolute;
+    height: 30px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    font-size: 12.5px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    z-index: 3;
+  }
+  .meeting-bar:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    z-index: 6;
+  }
+  .meeting-bar.itu-r { background: rgba(74,158,255,0.2); border: 1px solid rgba(74,158,255,0.4); color: #8fc4ff; }
+  .meeting-bar.ecc { background: rgba(255,107,157,0.2); border: 1px solid rgba(255,107,157,0.4); color: #ffb3d0; }
+  .meeting-bar.wrc { background: rgba(255,215,0,0.2); border: 1px solid rgba(255,215,0,0.5); color: #ffe066; }
+  .meeting-bar.cpg { background: rgba(255,159,67,0.2); border: 1px solid rgba(255,159,67,0.4); color: #ffcc99; }
+  .meeting-bar.fm { background: rgba(0,206,180,0.2); border: 1px solid rgba(0,206,180,0.4); color: #66dece; }
+  .meeting-bar.se { background: rgba(180,130,255,0.2); border: 1px solid rgba(180,130,255,0.4); color: #c8a0ff; }
+  .meeting-bar.apt { background: rgba(38,222,129,0.2); border: 1px solid rgba(38,222,129,0.4); color: #66eeaa; }
+  .meeting-bar.atu { background: rgba(247,183,49,0.2); border: 1px solid rgba(247,183,49,0.4); color: #ffd080; }
+  .meeting-bar.citel { background: rgba(69,170,242,0.2); border: 1px solid rgba(69,170,242,0.4); color: #88ccff; }
+  .meeting-bar.ec { background: rgba(168,85,247,0.2); border: 1px solid rgba(168,85,247,0.4); color: #c4a0ff; }
+  .meeting-bar.sg1 { background: rgba(74,158,255,0.15); border-color: rgba(74,158,255,0.3); }
+  .meeting-bar.sg3 { background: rgba(100,200,150,0.15); border-color: rgba(100,200,150,0.3); color: #a0ddb8; }
+  .meeting-bar.sg4 { background: rgba(180,130,255,0.15); border-color: rgba(180,130,255,0.3); color: #c8a0ff; }
+  .meeting-bar.sg5 { background: rgba(74,200,255,0.15); border-color: rgba(74,200,255,0.3); color: #8fd8ff; }
+  .meeting-bar.sg6 { background: rgba(255,180,100,0.15); border-color: rgba(255,180,100,0.3); color: #ffc888; }
+  .meeting-bar.sg7 { background: rgba(200,200,100,0.15); border-color: rgba(200,200,100,0.3); color: #d8d888; }
+
+  .tooltip {
+    display: none;
+    position: fixed;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    z-index: 100;
+    max-width: 340px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    pointer-events: none;
+  }
+  .tooltip.show { display: block; }
+  .tooltip .tt-title { font-weight: 600; margin-bottom: 6px; }
+  .tooltip .tt-row { color: var(--text-dim); margin-bottom: 3px; font-size: 12px; }
+  .tooltip .tt-row span { color: var(--text); }
+
+  /* List view */
+  .list-view { display: none; padding: 20px 32px; }
+  .list-view.active { display: block; }
+  .timeline-container.hidden { display: none; }
+
+  /* Static fallback table (visible when JS is stripped, e.g. SharePoint) */
+  .static-fallback { padding: 20px 32px; }
+  .static-fallback .static-note {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-bottom: 16px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+  }
+  .js-loaded .static-fallback { display: none; }
+
+  .list-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .list-table th {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 2px solid var(--border);
+    color: var(--text-dim);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    cursor: pointer;
+  }
+  .list-table th:hover { color: var(--text); }
+  .list-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .list-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .list-table .org-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .org-badge.itu-r { background: rgba(74,158,255,0.15); color: var(--itu-r); }
+  .org-badge.ecc { background: rgba(255,107,157,0.15); color: var(--ecc); }
+  .org-badge.wrc { background: rgba(255,215,0,0.15); color: var(--wrc); }
+  .org-badge.cpg { background: rgba(255,159,67,0.15); color: var(--cpg); }
+  .org-badge.fm { background: rgba(0,206,180,0.15); color: #66dece; }
+  .org-badge.se { background: rgba(180,130,255,0.15); color: #c8a0ff; }
+  .org-badge.apt { background: rgba(38,222,129,0.15); color: var(--apt); }
+  .org-badge.atu { background: rgba(247,183,49,0.15); color: var(--atu); }
+  .org-badge.citel { background: rgba(69,170,242,0.15); color: var(--citel); }
+  .org-badge.ec { background: rgba(168,85,247,0.15); color: var(--ec); }
+
+  .add-btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid rgba(80,200,120,0.4);
+    background: rgba(80,200,120,0.1);
+    color: #50c878;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .add-btn:hover { background: rgba(80,200,120,0.2); border-color: rgba(80,200,120,0.6); }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 32px;
+    width: 420px;
+    max-width: 90vw;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+  }
+  .modal h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+  .modal-field {
+    margin-bottom: 14px;
+  }
+  .modal-field label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .modal-field input, .modal-field select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .modal-field input:focus, .modal-field select:focus {
+    outline: none;
+    border-color: var(--itu-r);
+  }
+  .modal-row {
+    display: flex;
+    gap: 12px;
+  }
+  .modal-row .modal-field { flex: 1; }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 20px;
+  }
+  .modal-actions button {
+    padding: 8px 18px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .modal-actions button:hover { color: var(--text); border-color: #555; }
+  .modal-actions button.primary {
+    background: var(--itu-r);
+    border-color: var(--itu-r);
+    color: #fff;
+  }
+  .modal-actions button.primary:hover { background: #3a8eef; }
+
+  .meeting-bar.custom { background: rgba(80,200,120,0.2); border: 1px solid rgba(80,200,120,0.4); color: #80e8a0; }
+
+  .bar-delete {
+    margin-left: auto;
+    padding: 0 4px;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.6;
+    color: #ff6b6b;
+    flex-shrink: 0;
+  }
+  .meeting-bar:hover .bar-delete { opacity: 1; }
+  .bar-delete:hover { color: #ff4444; }
+  .list-delete {
+    margin-left: 8px;
+    cursor: pointer;
+    color: #ff6b6b;
+    font-size: 16px;
+    font-weight: bold;
+  }
+  .list-delete:hover { color: #ff4444; }
+  .org-badge.custom { background: rgba(80,200,120,0.15); color: #50c878; }
+
+  .stats-bar {
+    padding: 12px 32px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-dim);
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .stats-bar .stat span { color: var(--text); font-weight: 600; }
+  .stats-bar .sources { margin-left: auto; display: flex; gap: 16px; }
+  .stats-bar .sources a {
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .stats-bar .sources a:hover { color: var(--text); text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Spectrum Meetings Calendar</h1>
+  <div class="controls">
+    <input type="text" class="search-box" id="search" placeholder="Search meetings...">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="itu-r">ITU-R</button>
+    <button class="filter-btn wrc" data-filter="wrc">WRC/CPM</button>
+    <button class="filter-btn ec" data-filter="ec">EC</button>
+    <button class="filter-btn ecc" data-filter="cept">CEPT (Europe)</button>
+    <button class="filter-btn apt" data-filter="apt">APT</button>
+    <button class="filter-btn atu" data-filter="atu">ATU</button>
+    <button class="filter-btn citel" data-filter="citel">CITEL</button>
+    <button class="add-btn" id="addBtn">+ Add</button>
+    <div class="range-controls">
+      <button class="zoom-btn" id="rangePrev" title="Previous year">&lt;</button>
+      <span class="range-label" id="rangeLabel"></span>
+      <button class="zoom-btn" id="rangeNext" title="Next year">&gt;</button>
+    </div>
+    <div class="zoom-controls">
+      <button class="zoom-btn" id="zoomOut" title="Zoom out">-</button>
+      <span class="zoom-level" id="zoomLevel">100%</span>
+      <button class="zoom-btn" id="zoomIn" title="Zoom in">+</button>
+    </div>
+    <div class="view-toggle">
+      <button class="active" data-view="gantt">Timeline</button>
+      <button data-view="list">List</button>
+    </div>
+  </div>
+</header>
+
+<div class="timeline-container" id="timelineContainer">
+  <div class="timeline" id="timeline"></div>
+</div>
+
+<div class="static-fallback">
+  <div class="static-note">Download this file and open it in your browser for the full interactive calendar with timeline view, filters, search, and zoom.</div>
+  <table class="list-table">
+    <thead>
+      <tr>
+        <th>Org</th>
+        <th>Group</th>
+        <th>Meeting</th>
+        <th>Start</th>
+        <th>End</th>
+        <th>Location</th>
+      </tr>
+    </thead>
+    <tbody><tr><td><span class="org-badge cpg">ECC</span></td><td>PTC</td><td>PTC#4</td><td>23 Mar 2026</td><td>26 Mar 2026</td><td>United Kingdom [Edinburgh]</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>Working Group 3 – Information Session on</td><td>Working Group 3 – Information Session on AI 1.13</td><td>25 Mar 2026</td><td>26 Mar 2026</td><td>E-Meeting – Nairobi</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>SE19</td><td>#101 SE19 meeting</td><td>25 Mar 2026</td><td>26 Mar 2026</td><td>Germany [Berlin]</td></tr>
+<tr><td><span class="org-badge apt">APT</span></td><td>APT PP26-3</td><td>The 3rd Meeting of the APT Preparatory Group for the ITU Plenipotentiary Conference 2026 (APT PP26-3)</td><td>30 Mar 2026</td><td>2 Apr 2026</td><td>Bangkok, Thailand</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>Study Group 20 Regional Group for Africa</td><td>Study Group 20 Regional Group for Africa (SG20RG-AFR) Collocated with SG3 Regional Group for ARABs in Cairo, Egypt</td><td>30 Mar 2026</td><td>31 Mar 2026</td><td>Cairo</td></tr>
+<tr><td><span class="org-badge apt">APT</span></td><td>AWG-36</td><td>The 36th Meeting of the APT Wireless Group (AWG-36)</td><td>6 Apr 2026</td><td>10 Apr 2026</td><td>Bandar Seri Begawan, Brunei Darussalam</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>Task Group Broadcasting</td><td>Task Group Broadcasting</td><td>6 Apr 2026</td><td>8 Apr 2026</td><td>E-Meeting – Nairobi</td></tr>
+<tr><td><span class="org-badge citel">CITEL</span></td><td>47 Meeting of PCC.II</td><td>47 Meeting of PCC.II</td><td>6 Apr 2026</td><td>10 Apr 2026</td><td>Portsmouth - Dominica</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>SE40</td><td>SE40#89</td><td>7 Apr 2026</td><td>10 Apr 2026</td><td>ECO Office</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>SE45</td><td>SE45#33</td><td>8 Apr 2026</td><td>10 Apr 2026</td><td>Ireland [Dublin]</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>1st Meeting of the ATU Task Group on Sat</td><td>1st Meeting of the ATU Task Group on Satellite Resources on Regulatory and Licensing Fee Model Relating to Space Services</td><td>9 Apr 2026</td><td>10 Apr 2026</td><td>E-Meeting – Nairobi</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>1st Africa Preparatory meeting for WTSA-</td><td>1st Africa Preparatory meeting for WTSA-28 Back to Back with Regional Workshop on OTTs and Implementation of a Common Emergency Number in Africa at the Palms Airport City Hotel in Accra, Ghana</td><td>13 Apr 2026</td><td>17 Apr 2026</td><td>Accra</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>Maritime and Aeronautical Workshop</td><td>Maritime and Aeronautical Workshop</td><td>13 Apr 2026</td><td>17 Apr 2026</td><td>Lilongwe</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>FM22</td><td>FM22 #65</td><td>13 Apr 2026</td><td>16 Apr 2026</td><td>ECO Office</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>SE24</td><td>CG SE24#26_04 (WI60)</td><td>13 Apr 2026</td><td>-</td><td>Web Meeting</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>FM61</td><td>FM61#16</td><td>16 Apr 2026</td><td>17 Apr 2026</td><td>ECO Office</td></tr>
+<tr><td><span class="org-badge cpg">ECC</span></td><td>PTB</td><td>PTB#4bis</td><td>20 Apr 2026</td><td>21 Apr 2026</td><td>Web Meeting</td></tr>
+<tr><td><span class="org-badge apt">APT</span></td><td>ASTAP-38</td><td>The 38th APT Standardization Program Forum (ASTAP-38)</td><td>20 Apr 2026</td><td>24 Apr 2026</td><td>Bangkok, Thailand</td></tr>
+<tr><td><span class="org-badge citel">CITEL</span></td><td>48 Meeting of PCC.I</td><td>48 Meeting of PCC.I</td><td>20 Apr 2026</td><td>24 Apr 2026</td><td>Panama City - Panama</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>SE24</td><td>SE24#118</td><td>20 Apr 2026</td><td>24 Apr 2026</td><td>ECO Office</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>FM51</td><td>FM51 #61</td><td>21 Apr 2026</td><td>22 Apr 2026</td><td>France [ETSI in Sophia Antipolis]</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>WP 4C</td><td>WP 4C - Efficient Orbit/Spectrum Utilization for MSS and RDSS</td><td>22 Apr 2026</td><td>1 May 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>Briefing of Ministers on African Common </td><td>Briefing of Ministers on African Common Proposals (AfCPs) for WTPF-26</td><td>22 Apr 2026</td><td>-</td><td>E-Meeting – Nairobi</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>WP 4B</td><td>WP 4B - Systems, air interfaces, performance and availability objectives for FSS, BSS and MSS, including IP-based applications and satellite news gathering</td><td>29 Apr 2026</td><td>5 May 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>WP 4A</td><td>WP 4A - Efficient Orbit/Spectrum Utilization for FSS and BSS</td><td>4 May 2026</td><td>14 May 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge cpg">ECC</span></td><td>ECC PT1</td><td>ECC PT1 #84</td><td>4 May 2026</td><td>7 May 2026</td><td>Czech Republic [Prague]</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>Workshop on The Harmonized Calculation M</td><td>Workshop on The Harmonized Calculation Method for Africa (HCM4A)</td><td>11 May 2026</td><td>15 May 2026</td><td>E-Meeting – Nairobi</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>FM60</td><td>FM60 #21</td><td>11 May 2026</td><td>13 May 2026</td><td>ECO Office</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>SG12 Regional Group for the Africa (SG12</td><td>SG12 Regional Group for the Africa (SG12RG-AFR) in parallel with SG13 Regional Group for the Africa (SG13RG-AFR) in Livingstone, Zambia</td><td>14 May 2026</td><td>15 May 2026</td><td>zambia</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>SG 4</td><td>SG 4 - Satellite Services</td><td>15 May 2026</td><td>-</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>WP 5A</td><td>WP 5A - Land mobile service above 30 MHz*(excluding IMT); wireless access in the fixed service; amateur and amateur-satellite services</td><td>18 May 2026</td><td>26 May 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>WP 5C</td><td>WP 5C - Fixed wireless systems; HF and other systems below 30 MHz in the fixed and land mobile services</td><td>18 May 2026</td><td>29 May 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>WG SE</td><td>WG SE#102</td><td>18 May 2026</td><td>22 May 2026</td><td>France [Brest]</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>WP 5B</td><td>WP 5B - Maritime mobile service including Global Maritime Distress and Safety System (GMDSS); aeronautical mobile service and radiodetermination service</td><td>19 May 2026</td><td>28 May 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>FM44</td><td>FM44#94</td><td>19 May 2026</td><td>22 May 2026</td><td>Ireland [Cork]</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>27th Session of the ATU Administrative C</td><td>27th Session of the ATU Administrative Council Meeting in Cape Town, South Africa</td><td>19 May 2026</td><td>21 May 2026</td><td>South Africa</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>Study Group5 Regional Group for Africa (</td><td>Study Group5 Regional Group for Africa (SG5RG-AFR) in Malabo, Equatorial Guinea</td><td>19 May 2026</td><td>22 May 2026</td><td>Malabo</td></tr>
+<tr><td><span class="org-badge apt">APT</span></td><td>The Meeting of the South Asian</td><td>The Meeting of the South Asian Telecommunication Regulators’ Council Working Group on Spectrum</td><td>20 May 2026</td><td>21 May 2026</td><td>Thimphu, Bhutan</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>ITU RDF and the 2nd African Preparatory </td><td>ITU RDF and the 2nd African Preparatory Meeting (APM) for ITU-PP26 in Victoria Falls Hotel, Zimbabwe</td><td>25 May 2026</td><td>29 May 2026</td><td>Victoria Falls Hotel</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>WP 5D</td><td>WP 5D - IMT Systems</td><td>27 May 2026</td><td>5 Jun 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>Workshop on IPv6 Adoption in Africa</td><td>Workshop on IPv6 Adoption in Africa</td><td>1 Jun 2026</td><td>-</td><td>E-Meeting – Nairobi</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>WG FM</td><td>WG FM #113 Ireland</td><td>1 Jun 2026</td><td>5 Jun 2026</td><td>Ireland [Limerick]</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>ECC SG</td><td>69th ECC SG</td><td>10 Jun 2026</td><td>-</td><td>Web Meeting</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>ECC-EC</td><td>ECC-EC Consultation meeting 11 June 2026 (TBC)</td><td>11 Jun 2026</td><td>-</td><td>Web Meeting</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>WP 3J</td><td>WP 3J - Fundamentals of radio-wave propagation in non-ionized media</td><td>15 Jun 2026</td><td>25 Jun 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>WP 3K</td><td>WP 3K - Radio-wave propagation prediction for point-to-area propagation paths</td><td>15 Jun 2026</td><td>25 Jun 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>WP 3M</td><td>WP 3M - Radio-wave propagation prediction for point-to-point paths and paths between the Earth and space</td><td>15 Jun 2026</td><td>25 Jun 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge apt">APT</span></td><td>The 4th Meeting of the APT Pre</td><td>The 4th Meeting of the APT Preparatory Group for  the ITU Plenipotentiary Conference 2026</td><td>15 Jun 2026</td><td>19 Jun 2026</td><td>Kuala Lumpur, Malaysia</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>WP 3J/3K/3L/3M</td><td>WP 3J, 3K, 3L, 3M - Radio-wave Propagation</td><td>15 Jun 2026</td><td>25 Jun 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>FM62</td><td>FM62 #05</td><td>16 Jun 2026</td><td>18 Jun 2026</td><td>Hungary [Budapest]</td></tr>
+<tr><td><span class="org-badge ec">EC</span></td><td>RSPG</td><td>RSPG#70 - Radio Spectrum Policy Group</td><td>16 Jun 2026</td><td>-</td><td>Brussels, Belgium</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>ATU-R WG3</td><td>ATU-R WG3</td><td>23 Jun 2026</td><td>26 Jun 2026</td><td>E-Meeting – Nairobi</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>ECC Plenary</td><td>70th ECC Plenary</td><td>23 Jun 2026</td><td>26 Jun 2026</td><td>Iceland [Reykjanesbær]</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>FM51</td><td>FM51 #62</td><td>24 Jun 2026</td><td>25 Jun 2026</td><td>TBD</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>ATU-R WG 4</td><td>ATU-R WG 4</td><td>29 Jun 2026</td><td>1 Jul 2026</td><td>E-Meeting – Nairobi</td></tr>
+<tr><td><span class="org-badge cpg">ECC</span></td><td>CPG</td><td>CPG27-5</td><td>30 Jun 2026</td><td>3 Jul 2026</td><td>Latvia [Jūrmala]</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>Africa Digital Transformation Summit (AD</td><td>Africa Digital Transformation Summit (ADTS – 2026) in Parallel With the Global Tech Africa Event in Algiers, Algeria With a Welcome Reception</td><td>1 Jul 2026</td><td>-</td><td>Algiers</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>ATU-R WG 5</td><td>ATU-R WG 5</td><td>7 Jul 2026</td><td>9 Jul 2026</td><td>E-Meeting – Nairobi</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>SE21</td><td>SE21#128</td><td>9 Jul 2026</td><td>10 Jul 2026</td><td>Germany [Mainz]</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>Final Session of the ATU Administrative </td><td>Final Session of the ATU Administrative Council, Conference Preparatory Committee (CPC) and The 6th Session of the ATU Plenipotentiary Conference in Abuja Nigeria</td><td>16 Jul 2026</td><td>24 Jul 2026</td><td>Nigeria</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>7th Ordinary Session of the African Tele</td><td>7th Ordinary Session of the African Telecommunications Union Conference of Plenipotentiaries (CPL-26) in Abuja, Nigeria</td><td>23 Jul 2026</td><td>24 Jul 2026</td><td>Abuja</td></tr>
+<tr><td><span class="org-badge apt">APT</span></td><td>APG27-3</td><td>The 3rd Meeting of the APT Conference Preparatory Group for WRC-27 (APG27-3)</td><td>27 Jul 2026</td><td>31 Jul 2026</td><td>Sapporo, Japan</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>2nd Workshop – Subsea Cable Resilience i</td><td>2nd Workshop – Subsea Cable Resilience in Africa</td><td>1 Aug 2026</td><td>-</td><td>E-Meeting – Nairobi</td></tr>
+<tr><td><span class="org-badge apt">APT</span></td><td>PRFP-19</td><td>The 19th APT Policy and Regulation Forum for Pacific (PRFP-19)</td><td>4 Aug 2026</td><td>6 Aug 2026</td><td>Funafuti, Tuvalu</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>ATU WG 1A/1B</td><td>ATU WG 1A/1B</td><td>10 Aug 2026</td><td>14 Aug 2026</td><td>E-Meeting – Nairobi</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>ATU WG 2A/2B</td><td>ATU WG 2A/2B</td><td>18 Aug 2026</td><td>21 Aug 2026</td><td>E-Meeting – Nairobi</td></tr>
+<tr><td><span class="org-badge cpg">ECC</span></td><td>PTA</td><td>PTA#5</td><td>25 Aug 2026</td><td>28 Aug 2026</td><td>To Be Decided</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>SE24</td><td>SE24#119</td><td>31 Aug 2026</td><td>4 Sep 2026</td><td>Germany [Gerlingen-Schillerhöhe]</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>FM51</td><td>FM51 #63</td><td>2 Sep 2026</td><td>3 Sep 2026</td><td>Germany [Berlin]</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>SE19</td><td>#102 SE19 meeting (TBC)</td><td>2 Sep 2026</td><td>4 Sep 2026</td><td>To Be Decided</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>FM60</td><td>FM60 #22</td><td>2 Sep 2026</td><td>4 Sep 2026</td><td>To Be Decided</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>3rd APM27-3 for WRC-27</td><td>3rd APM27-3 for WRC-27</td><td>7 Sep 2026</td><td>11 Sep 2026</td><td>Tunisia</td></tr>
+<tr><td><span class="org-badge cpg">ECC</span></td><td>ECC PT1</td><td>ECC PT1 #85</td><td>7 Sep 2026</td><td>11 Sep 2026</td><td>Switzerland [Bern]</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>FM22</td><td>FM22 #66</td><td>8 Sep 2026</td><td>11 Sep 2026</td><td>To Be Decided</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>3rd and Final African Preparatory Meetin</td><td>3rd and Final African Preparatory Meeting (APM) for PP-26</td><td>14 Sep 2026</td><td>18 Sep 2026</td><td>TBC</td></tr>
+<tr><td><span class="org-badge cpg">ECC</span></td><td>PTB</td><td>PTB#5</td><td>14 Sep 2026</td><td>18 Sep 2026</td><td>To Be Decided</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>FM62</td><td>FM62 #06</td><td>15 Sep 2026</td><td>17 Sep 2026</td><td>Switzerland [Biel-Bienne]</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>WG SE</td><td>WG SE#103</td><td>21 Sep 2026</td><td>25 Sep 2026</td><td>Netherlands [(TBD)]</td></tr>
+<tr><td><span class="org-badge cpg">ECC</span></td><td>PTC</td><td>PTC#5</td><td>21 Sep 2026</td><td>24 Sep 2026</td><td>To Be Decided</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>WP 5D</td><td>WP 5D - IMT Systems</td><td>28 Sep 2026</td><td>8 Oct 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>WG FM</td><td>WG FM #114 Croatia</td><td>5 Oct 2026</td><td>9 Oct 2026</td><td>Croatia [Dubrovnik]</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>WP 4C</td><td>WP 4C - Efficient Orbit/Spectrum Utilization for MSS and RDSS</td><td>7 Oct 2026</td><td>16 Oct 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge apt">APT</span></td><td>APT Symposium on Digital Trans</td><td>APT Symposium on Digital Transformation and the Universal Service Fund</td><td>13 Oct 2026</td><td>15 Oct 2026</td><td>Postponed (TBD)</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>WP 4B</td><td>WP 4B - Systems, air interfaces, performance and availability objectives for FSS, BSS and MSS, including IP-based applications and satellite news gathering</td><td>14 Oct 2026</td><td>20 Oct 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>ECC SG</td><td>70th ECC SG</td><td>14 Oct 2026</td><td>-</td><td>Web Meeting</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>WP 4A</td><td>WP 4A - Efficient Orbit/Spectrum Utilization for FSS and BSS</td><td>19 Oct 2026</td><td>29 Oct 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>ECC Plenary</td><td>71st ECC Plenary</td><td>27 Oct 2026</td><td>30 Oct 2026</td><td>Ireland [TBC]</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>SG 4</td><td>SG 4 - Satellite Services</td><td>30 Oct 2026</td><td>-</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge cpg">ECC</span></td><td>CPG</td><td>CPG27-6</td><td>2 Nov 2026</td><td>5 Nov 2026</td><td>Norway [TBD]</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>FM51</td><td>FM51 #64</td><td>11 Nov 2026</td><td>12 Nov 2026</td><td>ECO Office</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>WP 5A</td><td>WP 5A - Land mobile service above 30 MHz*(excluding IMT); wireless access in the fixed service; amateur and amateur-satellite services</td><td>16 Nov 2026</td><td>27 Nov 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>WP 5B</td><td>WP 5B - Maritime mobile service including Global Maritime Distress and Safety System (GMDSS); aeronautical mobile service and radiodetermination service</td><td>16 Nov 2026</td><td>27 Nov 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>WP 5C</td><td>WP 5C - Fixed wireless systems; HF and other systems below 30 MHz in the fixed and land mobile services</td><td>16 Nov 2026</td><td>27 Nov 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>WP 5A/5B/5C</td><td>WP 5A, 5B, 5C - SG 5 Working Parties</td><td>16 Nov 2026</td><td>27 Nov 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>SE21</td><td>SE21#129</td><td>24 Nov 2026</td><td>26 Nov 2026</td><td>To Be Decided</td></tr>
+<tr><td><span class="org-badge itu-r">ITU-R</span></td><td>SG 5</td><td>SG 5 - Terrestrial Services</td><td>30 Nov 2026</td><td>1 Dec 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>SE24</td><td>SE24#120</td><td>30 Nov 2026</td><td>4 Dec 2026</td><td>To Be Decided</td></tr>
+<tr><td><span class="org-badge ec">EC</span></td><td>RSC</td><td>RSC#93 - Radio Spectrum Committee</td><td>2 Dec 2026</td><td>-</td><td>Brussels, Belgium</td></tr>
+<tr><td><span class="org-badge wrc">ITU-R</span></td><td>WRS</td><td>WRS-26 - World Radiocommunication Seminar 2026 (WRS-26)</td><td>7 Dec 2026</td><td>11 Dec 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge atu">ATU</span></td><td>ATU Telecommunications/ICT Day 2026</td><td>ATU Telecommunications/ICT Day 2026</td><td>7 Dec 2026</td><td>-</td><td>TBD</td></tr>
+<tr><td><span class="org-badge wrc">ITU-R</span></td><td>IRIS</td><td>2nd Inter-regional Information Session on WRC-27 Preparation (IRIS) - 2nd Inter-regional Information Session on WRC-27 Preparation (IRIS)</td><td>14 Dec 2026</td><td>16 Dec 2026</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge apt">APT</span></td><td>GA-17</td><td>The 17th Session of the General Assembly of the APT (GA-17)</td><td>14 Dec 2026</td><td>15 Dec 2026</td><td>TBD</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>SE19</td><td>#103 SE19 meeting (TBC)</td><td>15 Dec 2026</td><td>17 Dec 2026</td><td>To Be Decided</td></tr>
+<tr><td><span class="org-badge cpg">ECC</span></td><td>ECC PT1</td><td>ECC PT1 #86</td><td>11 Jan 2027</td><td>15 Jan 2027</td><td>To Be Decided</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>WG FM</td><td>WG FM #115 Czech Republic</td><td>8 Feb 2027</td><td>12 Feb 2027</td><td>Czech Republic [TBD]</td></tr>
+<tr><td><span class="org-badge wrc">ITU-R</span></td><td>CPM</td><td>CPM27-2 - Second Session of the Conference Preparatory Meeting for WRC-27 (CPM27-2)</td><td>5 Apr 2027</td><td>15 Apr 2027</td><td>Geneva, Switzerland</td></tr>
+<tr><td><span class="org-badge ecc">ECC</span></td><td>FM22</td><td>FM22 #67</td><td>20 Apr 2027</td><td>23 Apr 2027</td><td>To Be Decided</td></tr>
+<tr><td><span class="org-badge cpg">ECC</span></td><td>ECC PT1</td><td>ECC PT1 #87</td><td>26 Apr 2027</td><td>30 Apr 2027</td><td>To Be Decided</td></tr>
+<tr><td><span class="org-badge cpg">ECC</span></td><td>ECC PT1</td><td>ECC PT1 #88</td><td>6 Sep 2027</td><td>10 Sep 2027</td><td>France</td></tr>
+<tr><td><span class="org-badge wrc">ITU-R</span></td><td>RA-27</td><td>RA-27 - Radiocommunication Assembly 2027 (RA-27)</td><td>11 Oct 2027</td><td>15 Oct 2027</td><td>Shanghai, China</td></tr>
+<tr><td><span class="org-badge wrc">ITU-R</span></td><td>WRC-27</td><td>WRC-27 - World Radiocommunication Conference 2027</td><td>18 Oct 2027</td><td>12 Nov 2027</td><td>Shanghai, China</td></tr></tbody>
+  </table>
+</div>
+
+<div class="list-view" id="listView">
+  <table class="list-table">
+    <thead>
+      <tr>
+        <th data-sort="org">Org</th>
+        <th data-sort="group">Group</th>
+        <th data-sort="name">Meeting</th>
+        <th data-sort="start">Start</th>
+        <th data-sort="end">End</th>
+        <th data-sort="location">Location</th>
+      </tr>
+    </thead>
+    <tbody id="listBody"></tbody>
+  </table>
+</div>
+
+<div class="stats-bar" id="statsBar"></div>
+<div class="tooltip" id="tooltip"></div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>Add Meeting</h2>
+    <div class="modal-row">
+      <div class="modal-field">
+        <label>Organization</label>
+        <select id="mOrg">
+          <option value="ITU-R">ITU-R</option>
+          <option value="EC">EC</option>
+          <option value="ECC">CEPT</option>
+          <option value="APT">APT</option>
+          <option value="ATU">ATU</option>
+          <option value="CITEL">CITEL</option>
+          <option value="Custom">Custom</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>Group</label>
+        <input type="text" id="mGroup" placeholder="e.g. WP 5A, FM44">
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>Meeting Name</label>
+      <input type="text" id="mName" placeholder="e.g. WP 5A - Land mobile">
+    </div>
+    <div class="modal-row">
+      <div class="modal-field">
+        <label>Start Date</label>
+        <input type="date" id="mStart">
+      </div>
+      <div class="modal-field">
+        <label>End Date</label>
+        <input type="date" id="mEnd">
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>Location</label>
+      <input type="text" id="mLocation" placeholder="e.g. Geneva, Switzerland">
+    </div>
+    <div class="modal-actions">
+      <button id="modalCancel">Cancel</button>
+      <button class="primary" id="modalSave">Add Meeting</button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.body.classList.add('js-loaded');
+const meetings = [
+  {
+    "org": "ITU-R",
+    "group": "WP 4C",
+    "name": "WP 4C - Efficient Orbit/Spectrum Utilization for MSS and RDSS",
+    "start": "2026-04-22",
+    "end": "2026-05-01",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4B",
+    "name": "WP 4B - Systems, air interfaces, performance and availability objectives for FSS, BSS and MSS, including IP-based applications and satellite news gathering",
+    "start": "2026-04-29",
+    "end": "2026-05-05",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4A",
+    "name": "WP 4A - Efficient Orbit/Spectrum Utilization for FSS and BSS",
+    "start": "2026-05-04",
+    "end": "2026-05-14",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "SG 4",
+    "name": "SG 4 - Satellite Services",
+    "start": "2026-05-15",
+    "end": "2026-05-15",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5A",
+    "name": "WP 5A - Land mobile service above 30 MHz*(excluding IMT); wireless access in the fixed service; amateur and amateur-satellite services",
+    "start": "2026-05-18",
+    "end": "2026-05-26",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5C",
+    "name": "WP 5C - Fixed wireless systems; HF and other systems below 30 MHz in the fixed and land mobile services",
+    "start": "2026-05-18",
+    "end": "2026-05-29",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5B",
+    "name": "WP 5B - Maritime mobile service including Global Maritime Distress and Safety System (GMDSS); aeronautical mobile service and radiodetermination service",
+    "start": "2026-05-19",
+    "end": "2026-05-28",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5D",
+    "name": "WP 5D - IMT Systems",
+    "start": "2026-05-27",
+    "end": "2026-06-05",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 3J",
+    "name": "WP 3J - Fundamentals of radio-wave propagation in non-ionized media",
+    "start": "2026-06-15",
+    "end": "2026-06-25",
+    "location": "Geneva, Switzerland",
+    "cat": "sg3"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 3K",
+    "name": "WP 3K - Radio-wave propagation prediction for point-to-area propagation paths",
+    "start": "2026-06-15",
+    "end": "2026-06-25",
+    "location": "Geneva, Switzerland",
+    "cat": "sg3"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 3M",
+    "name": "WP 3M - Radio-wave propagation prediction for point-to-point paths and paths between the Earth and space",
+    "start": "2026-06-15",
+    "end": "2026-06-25",
+    "location": "Geneva, Switzerland",
+    "cat": "sg3"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5D",
+    "name": "WP 5D - IMT Systems",
+    "start": "2026-09-28",
+    "end": "2026-10-08",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4C",
+    "name": "WP 4C - Efficient Orbit/Spectrum Utilization for MSS and RDSS",
+    "start": "2026-10-07",
+    "end": "2026-10-16",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4B",
+    "name": "WP 4B - Systems, air interfaces, performance and availability objectives for FSS, BSS and MSS, including IP-based applications and satellite news gathering",
+    "start": "2026-10-14",
+    "end": "2026-10-20",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4A",
+    "name": "WP 4A - Efficient Orbit/Spectrum Utilization for FSS and BSS",
+    "start": "2026-10-19",
+    "end": "2026-10-29",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "SG 4",
+    "name": "SG 4 - Satellite Services",
+    "start": "2026-10-30",
+    "end": "2026-10-30",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5A",
+    "name": "WP 5A - Land mobile service above 30 MHz*(excluding IMT); wireless access in the fixed service; amateur and amateur-satellite services",
+    "start": "2026-11-16",
+    "end": "2026-11-27",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5B",
+    "name": "WP 5B - Maritime mobile service including Global Maritime Distress and Safety System (GMDSS); aeronautical mobile service and radiodetermination service",
+    "start": "2026-11-16",
+    "end": "2026-11-27",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5C",
+    "name": "WP 5C - Fixed wireless systems; HF and other systems below 30 MHz in the fixed and land mobile services",
+    "start": "2026-11-16",
+    "end": "2026-11-27",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "SG 5",
+    "name": "SG 5 - Terrestrial Services",
+    "start": "2026-11-30",
+    "end": "2026-12-01",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WRS",
+    "name": "WRS-26 - World Radiocommunication Seminar 2026 (WRS-26)",
+    "start": "2026-12-07",
+    "end": "2026-12-11",
+    "location": "Geneva, Switzerland",
+    "cat": "wrc"
+  },
+  {
+    "org": "ITU-R",
+    "group": "IRIS",
+    "name": "2nd Inter-regional Information Session on WRC-27 Preparation (IRIS) - 2nd Inter-regional Information Session on WRC-27 Preparation (IRIS)",
+    "start": "2026-12-14",
+    "end": "2026-12-16",
+    "location": "Geneva, Switzerland",
+    "cat": "wrc"
+  },
+  {
+    "org": "ITU-R",
+    "group": "CPM",
+    "name": "CPM27-2 - Second Session of the Conference Preparatory Meeting for WRC-27 (CPM27-2)",
+    "start": "2027-04-05",
+    "end": "2027-04-15",
+    "location": "Geneva, Switzerland",
+    "cat": "wrc"
+  },
+  {
+    "org": "ITU-R",
+    "group": "RA-27",
+    "name": "RA-27 - Radiocommunication Assembly 2027 (RA-27)",
+    "start": "2027-10-11",
+    "end": "2027-10-15",
+    "location": "Shanghai, China",
+    "cat": "wrc"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WRC-27",
+    "name": "WRC-27 - World Radiocommunication Conference 2027",
+    "start": "2027-10-18",
+    "end": "2027-11-12",
+    "location": "Shanghai, China",
+    "cat": "wrc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40#89",
+    "start": "2026-04-07",
+    "end": "2026-04-10",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM51",
+    "name": "FM51 #62",
+    "start": "2026-06-24",
+    "end": "2026-06-25",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM51",
+    "name": "FM51 #61",
+    "start": "2026-04-21",
+    "end": "2026-04-22",
+    "location": "France [ETSI in Sophia Antipolis]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG FM",
+    "name": "WG FM #115 Czech Republic",
+    "start": "2027-02-08",
+    "end": "2027-02-12",
+    "location": "Czech Republic [TBD]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40 CG1#2 (WI SE40_49)",
+    "start": "2026-03-16",
+    "end": "2026-03-17",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM51",
+    "name": "FM51 #64",
+    "start": "2026-11-11",
+    "end": "2026-11-12",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#94",
+    "start": "2026-05-19",
+    "end": "2026-05-22",
+    "location": "Ireland [Cork]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40 CG2#2 (WI SE40_49)",
+    "start": "2026-03-19",
+    "end": "2026-03-19",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM51",
+    "name": "FM51 #63",
+    "start": "2026-09-02",
+    "end": "2026-09-03",
+    "location": "Germany [Berlin]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "PTB",
+    "name": "PTB#4bis",
+    "start": "2026-04-20",
+    "end": "2026-04-21",
+    "location": "Web Meeting",
+    "cat": "cpg"
+  },
+  {
+    "org": "APT",
+    "group": "APT PP26-2",
+    "name": "The 2nd Meeting of the APT Preparatory Group for  the ITU Plenipotentiary Conference 2026 (APT PP26-2)",
+    "start": "2026-01-28",
+    "end": "2026-01-29",
+    "location": "Fully Virtual Meeting",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "CGSP-1",
+    "name": "The 1st Meeting of the Correspondence Group for the Strategic Plan of the Asia-Pacific Telecommunity for 2027 – 2029 (CGSP-1)",
+    "start": "2026-03-16",
+    "end": "2026-03-18",
+    "location": "Fully Virtual Meeting",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APT PP26-3",
+    "name": "The 3rd Meeting of the APT Preparatory Group for the ITU Plenipotentiary Conference 2026 (APT PP26-3)",
+    "start": "2026-03-30",
+    "end": "2026-04-02",
+    "location": "Bangkok, Thailand",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "AWG-36",
+    "name": "The 36th Meeting of the APT Wireless Group (AWG-36)",
+    "start": "2026-04-06",
+    "end": "2026-04-10",
+    "location": "Bandar Seri Begawan, Brunei Darussalam",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "ASTAP-38",
+    "name": "The 38th APT Standardization Program Forum (ASTAP-38)",
+    "start": "2026-04-20",
+    "end": "2026-04-24",
+    "location": "Bangkok, Thailand",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "The Meeting of the South Asian",
+    "name": "The Meeting of the South Asian Telecommunication Regulators’ Council Working Group on Spectrum",
+    "start": "2026-05-20",
+    "end": "2026-05-21",
+    "location": "Thimphu, Bhutan",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "The 4th Meeting of the APT Pre",
+    "name": "The 4th Meeting of the APT Preparatory Group for  the ITU Plenipotentiary Conference 2026",
+    "start": "2026-06-15",
+    "end": "2026-06-19",
+    "location": "Kuala Lumpur, Malaysia",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APG27-3",
+    "name": "The 3rd Meeting of the APT Conference Preparatory Group for WRC-27 (APG27-3)",
+    "start": "2026-07-27",
+    "end": "2026-07-31",
+    "location": "Sapporo, Japan",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "PRFP-19",
+    "name": "The 19th APT Policy and Regulation Forum for Pacific (PRFP-19)",
+    "start": "2026-08-04",
+    "end": "2026-08-06",
+    "location": "Funafuti, Tuvalu",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APT Symposium on Digital Trans",
+    "name": "APT Symposium on Digital Transformation and the Universal Service Fund",
+    "start": "2026-10-13",
+    "end": "2026-10-15",
+    "location": "Postponed (TBD)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "GA-17",
+    "name": "The 17th Session of the General Assembly of the APT (GA-17)",
+    "start": "2026-12-14",
+    "end": "2026-12-15",
+    "location": "TBD",
+    "cat": "apt"
+  },
+  {
+    "org": "ATU",
+    "group": "Working Group 3 – Information Session on",
+    "name": "Working Group 3 – Information Session on AI 1.13",
+    "start": "2026-03-25",
+    "end": "2026-03-26",
+    "location": "E-Meeting – Nairobi",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "Study Group 20 Regional Group for Africa",
+    "name": "Study Group 20 Regional Group for Africa (SG20RG-AFR) Collocated with SG3 Regional Group for ARABs in Cairo, Egypt",
+    "start": "2026-03-30",
+    "end": "2026-03-31",
+    "location": "Cairo",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "Task Group Broadcasting",
+    "name": "Task Group Broadcasting",
+    "start": "2026-04-06",
+    "end": "2026-04-08",
+    "location": "E-Meeting – Nairobi",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "1st Meeting of the ATU Task Group on Sat",
+    "name": "1st Meeting of the ATU Task Group on Satellite Resources on Regulatory and Licensing Fee Model Relating to Space Services",
+    "start": "2026-04-09",
+    "end": "2026-04-10",
+    "location": "E-Meeting – Nairobi",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "1st Africa Preparatory meeting for WTSA-",
+    "name": "1st Africa Preparatory meeting for WTSA-28 Back to Back with Regional Workshop on OTTs and Implementation of a Common Emergency Number in Africa at the Palms Airport City Hotel in Accra, Ghana",
+    "start": "2026-04-13",
+    "end": "2026-04-17",
+    "location": "Accra",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "Maritime and Aeronautical Workshop",
+    "name": "Maritime and Aeronautical Workshop",
+    "start": "2026-04-13",
+    "end": "2026-04-17",
+    "location": "Lilongwe",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "Briefing of Ministers on African Common ",
+    "name": "Briefing of Ministers on African Common Proposals (AfCPs) for WTPF-26",
+    "start": "2026-04-22",
+    "end": "2026-04-22",
+    "location": "E-Meeting – Nairobi",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "Workshop on The Harmonized Calculation M",
+    "name": "Workshop on The Harmonized Calculation Method for Africa (HCM4A)",
+    "start": "2026-05-11",
+    "end": "2026-05-15",
+    "location": "E-Meeting – Nairobi",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "SG12 Regional Group for the Africa (SG12",
+    "name": "SG12 Regional Group for the Africa (SG12RG-AFR) in parallel with SG13 Regional Group for the Africa (SG13RG-AFR) in Livingstone, Zambia",
+    "start": "2026-05-14",
+    "end": "2026-05-15",
+    "location": "zambia",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "27th Session of the ATU Administrative C",
+    "name": "27th Session of the ATU Administrative Council Meeting in Cape Town, South Africa",
+    "start": "2026-05-19",
+    "end": "2026-05-21",
+    "location": "South Africa",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "Study Group5 Regional Group for Africa (",
+    "name": "Study Group5 Regional Group for Africa (SG5RG-AFR) in Malabo, Equatorial Guinea",
+    "start": "2026-05-19",
+    "end": "2026-05-22",
+    "location": "Malabo",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "ITU RDF and the 2nd African Preparatory ",
+    "name": "ITU RDF and the 2nd African Preparatory Meeting (APM) for ITU-PP26 in Victoria Falls Hotel, Zimbabwe",
+    "start": "2026-05-25",
+    "end": "2026-05-29",
+    "location": "Victoria Falls Hotel",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "Workshop on IPv6 Adoption in Africa",
+    "name": "Workshop on IPv6 Adoption in Africa",
+    "start": "2026-06-01",
+    "end": "2026-06-01",
+    "location": "E-Meeting – Nairobi",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "ATU-R WG3",
+    "name": "ATU-R WG3",
+    "start": "2026-06-23",
+    "end": "2026-06-26",
+    "location": "E-Meeting – Nairobi",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "ATU-R WG 4",
+    "name": "ATU-R WG 4",
+    "start": "2026-06-29",
+    "end": "2026-07-01",
+    "location": "E-Meeting – Nairobi",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "Africa Digital Transformation Summit (AD",
+    "name": "Africa Digital Transformation Summit (ADTS – 2026) in Parallel With the Global Tech Africa Event in Algiers, Algeria With a Welcome Reception",
+    "start": "2026-07-01",
+    "end": "2026-07-01",
+    "location": "Algiers",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "ATU-R WG 5",
+    "name": "ATU-R WG 5",
+    "start": "2026-07-07",
+    "end": "2026-07-09",
+    "location": "E-Meeting – Nairobi",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "Final Session of the ATU Administrative ",
+    "name": "Final Session of the ATU Administrative Council, Conference Preparatory Committee (CPC) and The 6th Session of the ATU Plenipotentiary Conference in Abuja Nigeria",
+    "start": "2026-07-16",
+    "end": "2026-07-24",
+    "location": "Nigeria",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "7th Ordinary Session of the African Tele",
+    "name": "7th Ordinary Session of the African Telecommunications Union Conference of Plenipotentiaries (CPL-26) in Abuja, Nigeria",
+    "start": "2026-07-23",
+    "end": "2026-07-24",
+    "location": "Abuja",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "2nd Workshop – Subsea Cable Resilience i",
+    "name": "2nd Workshop – Subsea Cable Resilience in Africa",
+    "start": "2026-08-01",
+    "end": "2026-08-01",
+    "location": "E-Meeting – Nairobi",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "ATU WG 1A/1B",
+    "name": "ATU WG 1A/1B",
+    "start": "2026-08-10",
+    "end": "2026-08-14",
+    "location": "E-Meeting – Nairobi",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "ATU WG 2A/2B",
+    "name": "ATU WG 2A/2B",
+    "start": "2026-08-18",
+    "end": "2026-08-21",
+    "location": "E-Meeting – Nairobi",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "3rd APM27-3 for WRC-27",
+    "name": "3rd APM27-3 for WRC-27",
+    "start": "2026-09-07",
+    "end": "2026-09-11",
+    "location": "Tunisia",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "3rd and Final African Preparatory Meetin",
+    "name": "3rd and Final African Preparatory Meeting (APM) for PP-26",
+    "start": "2026-09-14",
+    "end": "2026-09-18",
+    "location": "TBC",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "ATU Telecommunications/ICT Day 2026",
+    "name": "ATU Telecommunications/ICT Day 2026",
+    "start": "2026-12-07",
+    "end": "2026-12-07",
+    "location": "TBD",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "Fourth ITU Regional Workshop for Africa ",
+    "name": "Fourth ITU Regional Workshop for Africa on “strengthening Ict Integrity: Combating Counterfeits, Testing Challenges, and Fraudulent Communications in the Africa Region” and Study Group 11 Regional Group for Africa (Sg11rg-afr) Tunis, Tunisia",
+    "start": "2025-10-01",
+    "end": "2025-10-03",
+    "location": "Tunisia",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "ATU Telecommunications/ICT Day 2025 Foru",
+    "name": "ATU Telecommunications/ICT Day 2025 Forum under the theme “Digital Pathways to a Greener, Climate-Resilient Africa” – Algeria",
+    "start": "2025-12-07",
+    "end": "2025-12-07",
+    "location": "Algiers",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "ATU Online Capacity Building on NGSO Sat",
+    "name": "ATU Online Capacity Building on NGSO Satellite Networks",
+    "start": "2026-02-16",
+    "end": "2026-02-20",
+    "location": "E-Meeting – Nairobi",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "Task Group on Emerging Technologies",
+    "name": "Task Group on Emerging Technologies",
+    "start": "2026-03-09",
+    "end": "2026-03-12",
+    "location": "E-Meeting – Nairobi",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "Task Group Spectrum Recommendations",
+    "name": "Task Group Spectrum Recommendations",
+    "start": "2026-03-16",
+    "end": "2026-03-19",
+    "location": "E-Meeting – Nairobi",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "2nd African Preparatory Meeting for WRC-",
+    "name": "2nd African Preparatory Meeting for WRC-27 (Apm27-2) and 10th Sub-Sahara Spectrum Management Conference and Capacity Building Side Event Towards Sharing and Compatibility Studies for WRC-27 Agenda Item 1.7 at The Mövenpick Hotel &#038; Residences in Nairobi, Kenya",
+    "start": "2025-08-11",
+    "end": "2025-08-15",
+    "location": "Nairobi, Kenya",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "3rd and final African Preparatory Meetin",
+    "name": "3rd and final African Preparatory Meeting (APM25-3) for WTDC-25 and USF Workshop at Radisson Blu Hotel Abidjan Airport, Airport Boulevard – Abidjan, Cote d’Ivoire",
+    "start": "2025-08-25",
+    "end": "2025-08-29",
+    "location": "Cote d’Ivoire",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "Forum on China-Africa Digital and Emergi",
+    "name": "Forum on China-Africa Digital and Emerging Industry Cooperation in Addis Ababa, Ethiopia",
+    "start": "2025-09-26",
+    "end": "2025-09-26",
+    "location": "Addis Ababa",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "Safer Internet Day",
+    "name": "Safer Internet Day",
+    "start": "2025-02-11",
+    "end": "2025-02-11",
+    "location": "Online",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "ATU Africa Innovation Challenge 2024 Awa",
+    "name": "ATU Africa Innovation Challenge 2024 Award Ceremony (TBC)",
+    "start": "2025-03-04",
+    "end": "2025-03-04",
+    "location": "E-Meeting – Nairobi",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "African One-Day Preparatory Meeting for ",
+    "name": "African One-Day Preparatory Meeting for the World Telecommunications Development Conference (WTDC-25) and the Workshop on Satellite Technologies for Development on 10th April 2025 at Safari Park Hotel, Nairobi, Kenya",
+    "start": "2025-04-07",
+    "end": "2025-04-10",
+    "location": "Nairobi, Kenya",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "26th Ordinary Session of the ATU Adminis",
+    "name": "26th Ordinary Session of the ATU Administrative Council in Dakar – Senegal",
+    "start": "2025-05-28",
+    "end": "2025-05-30",
+    "location": "Senegal",
+    "cat": "atu"
+  },
+  {
+    "org": "CITEL",
+    "group": "47 Meeting of PCC.II",
+    "name": "47 Meeting of PCC.II",
+    "start": "2026-04-06",
+    "end": "2026-04-10",
+    "location": "Portsmouth - Dominica",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "48 Meeting of PCC.I",
+    "name": "48 Meeting of PCC.I",
+    "start": "2026-04-20",
+    "end": "2026-04-24",
+    "location": "Panama City - Panama",
+    "cat": "citel"
+  },
+  {
+    "org": "EC",
+    "group": "RSC",
+    "name": "RSC#92 - Radio Spectrum Committee",
+    "start": "2026-03-18",
+    "end": "2026-03-18",
+    "location": "Brussels, Belgium",
+    "cat": "ec"
+  },
+  {
+    "org": "EC",
+    "group": "RSC",
+    "name": "RSC#93 - Radio Spectrum Committee",
+    "start": "2026-12-02",
+    "end": "2026-12-02",
+    "location": "Brussels, Belgium",
+    "cat": "ec"
+  },
+  {
+    "org": "ECC",
+    "group": "WG FM",
+    "name": "WG FM #109",
+    "start": "2025-02-10",
+    "end": "2025-02-14",
+    "location": "Portugal [Porto]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG FM",
+    "name": "WG FM #110",
+    "start": "2025-06-02",
+    "end": "2025-06-06",
+    "location": "France [Valbonne - Sophia Antipolis]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG FM",
+    "name": "WG FM #111",
+    "start": "2025-10-13",
+    "end": "2025-10-17",
+    "location": "Hungary [Budapest]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE19",
+    "name": "#97 SE19 meeting",
+    "start": "2025-01-07",
+    "end": "2025-01-09",
+    "location": "Netherlands [Groningen]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC Plenary",
+    "name": "67th ECC Plenary",
+    "start": "2025-06-24",
+    "end": "2025-06-27",
+    "location": "Slovenia [Bled]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC Plenary",
+    "name": "66th ECC Plenary",
+    "start": "2025-03-04",
+    "end": "2025-03-07",
+    "location": "Spain [Malaga]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG SE",
+    "name": "WG SE#99",
+    "start": "2025-05-19",
+    "end": "2025-05-23",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG SE",
+    "name": "WG SE#98",
+    "start": "2025-01-20",
+    "end": "2025-01-24",
+    "location": "Ireland [Cork]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC Plenary",
+    "name": "68th ECC Plenary",
+    "start": "2025-11-04",
+    "end": "2025-11-07",
+    "location": "Greece [Athens]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG SE",
+    "name": "WG SE#100",
+    "start": "2025-09-22",
+    "end": "2025-09-26",
+    "location": "Switzerland [Bern]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC PT1",
+    "name": "ECC PT1 #80 non-WRC issues",
+    "start": "2025-01-13",
+    "end": "2025-01-15",
+    "location": "United Kingdom [Edinburgh]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC PT1",
+    "name": "ECC PT1 #81",
+    "start": "2025-05-05",
+    "end": "2025-05-09",
+    "location": "Hungary [Budapest]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC PT1",
+    "name": "ECC PT1 #82",
+    "start": "2025-09-15",
+    "end": "2025-09-19",
+    "location": "Lithuania [Vilnius]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "SE21",
+    "name": "SE21#125",
+    "start": "2025-04-08",
+    "end": "2025-04-10",
+    "location": "France [Brest]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC SG",
+    "name": "65th ECC SG",
+    "start": "2025-02-19",
+    "end": "2025-02-19",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC-EC",
+    "name": "ECC-EC Consultation meeting 12 June 2025",
+    "start": "2025-06-12",
+    "end": "2025-06-12",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC SG",
+    "name": "66th ECC SG",
+    "start": "2025-06-11",
+    "end": "2025-06-11",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC SG",
+    "name": "67th ECC SG",
+    "start": "2025-10-22",
+    "end": "2025-10-22",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC-EC",
+    "name": "ECC-EC Consultation meeting 17 December 2025",
+    "start": "2025-12-17",
+    "end": "2025-12-17",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#84",
+    "start": "2025-01-30",
+    "end": "2025-01-31",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "PTA",
+    "name": "PTA#2",
+    "start": "2025-02-17",
+    "end": "2025-02-20",
+    "location": "Germany [Mainz]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "PTC",
+    "name": "PTC#2",
+    "start": "2025-04-01",
+    "end": "2025-04-04",
+    "location": "Greece [Athens]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "FM22",
+    "name": "FM22 #63",
+    "start": "2025-04-01",
+    "end": "2025-04-04",
+    "location": "Hungary [Budapest]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60 #15",
+    "start": "2025-02-25",
+    "end": "2025-02-27",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM61",
+    "name": "FM61#10",
+    "start": "2025-01-30",
+    "end": "2025-01-31",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM51",
+    "name": "FM51 #56",
+    "start": "2025-01-14",
+    "end": "2025-01-14",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC PT1",
+    "name": "ECC PT1 #80 WRC issues",
+    "start": "2025-01-16",
+    "end": "2025-01-17",
+    "location": "United Kingdom [Edinburgh]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "PTB",
+    "name": "PTB#2",
+    "start": "2025-03-24",
+    "end": "2025-03-28",
+    "location": "ECO Office",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "PTC",
+    "name": "PTC#3",
+    "start": "2025-09-02",
+    "end": "2025-09-05",
+    "location": "France [Brest]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "SE24#115",
+    "start": "2025-05-05",
+    "end": "2025-05-07",
+    "location": "Germany [Stuttgart ]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "SE24#116",
+    "start": "2025-08-25",
+    "end": "2025-08-29",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "CPG",
+    "name": "CPG27-3",
+    "start": "2025-06-10",
+    "end": "2025-06-13",
+    "location": "Netherlands [Groningen]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60 #18",
+    "start": "2025-10-01",
+    "end": "2025-10-03",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE21",
+    "name": "SE21#127",
+    "start": "2025-11-25",
+    "end": "2025-11-27",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "PTA",
+    "name": "PTA#3",
+    "start": "2025-08-26",
+    "end": "2025-08-29",
+    "location": "Hungary [Budapest]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "SE21",
+    "name": "SE21#126",
+    "start": "2025-07-08",
+    "end": "2025-07-10",
+    "location": "Switzerland [Biel/Bienne]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60 #14",
+    "start": "2025-02-03",
+    "end": "2025-02-03",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM61",
+    "name": "FM61#12",
+    "start": "2025-04-23",
+    "end": "2025-04-25",
+    "location": "United Kingdom [Edinburgh]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60 #17",
+    "start": "2025-05-22",
+    "end": "2025-05-23",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60 #16",
+    "start": "2025-04-28",
+    "end": "2025-04-29",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44 CG on D2C",
+    "start": "2025-01-09",
+    "end": "2025-01-09",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24#25_1 (WIs 60, 76, 79, 80, 81, 82)",
+    "start": "2025-03-05",
+    "end": "2025-03-07",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE19",
+    "name": "#99 SE19 meeting",
+    "start": "2025-09-02",
+    "end": "2025-09-04",
+    "location": "Czech Republic [Prague]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE19",
+    "name": "#98 SE19 meeting",
+    "start": "2025-04-01",
+    "end": "2025-04-03",
+    "location": "Switzerland [Biel/ Bienne]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "CPG",
+    "name": "CPG27-4",
+    "start": "2025-12-15",
+    "end": "2025-12-18",
+    "location": "Denmark [Nuuk, Greenland]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "SE45",
+    "name": "SE45#27",
+    "start": "2025-03-24",
+    "end": "2025-03-25",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40#85",
+    "start": "2025-03-05",
+    "end": "2025-03-07",
+    "location": "France [Maisons-Alfort]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "PTB",
+    "name": "PTB#3",
+    "start": "2025-09-08",
+    "end": "2025-09-12",
+    "location": "Norway [ Tromsø]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "FM61",
+    "name": "FM61#11",
+    "start": "2025-03-27",
+    "end": "2025-03-28",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24#25_2 (WIs 76, 77, 78 ,79, 80, 81)",
+    "start": "2025-03-27",
+    "end": "2025-03-31",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#85",
+    "start": "2025-04-07",
+    "end": "2025-04-10",
+    "location": "Hungary [Budapest]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE45",
+    "name": "SE45#28",
+    "start": "2025-04-11",
+    "end": "2025-04-11",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#86 PC GNSS & SRD",
+    "start": "2025-05-22",
+    "end": "2025-05-23",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24#25_3 (WI76#08; WI60#48)",
+    "start": "2025-04-22",
+    "end": "2025-04-22",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40#86",
+    "start": "2025-07-09",
+    "end": "2025-07-11",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#87",
+    "start": "2025-07-07",
+    "end": "2025-07-09",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "CG-FS",
+    "name": "CG-FS #02 -Discussion on potential LS to ETSI",
+    "start": "2025-03-25",
+    "end": "2025-03-25",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC SG",
+    "name": "Informal ECC SG",
+    "start": "2025-04-10",
+    "end": "2025-04-10",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC Plenary",
+    "name": "71st ECC Plenary",
+    "start": "2026-10-27",
+    "end": "2026-10-30",
+    "location": "Ireland [TBC]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC SG",
+    "name": "68th ECC SG",
+    "start": "2026-02-18",
+    "end": "2026-02-18",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC SG",
+    "name": "69th ECC SG",
+    "start": "2026-06-10",
+    "end": "2026-06-10",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC Plenary",
+    "name": "70th ECC Plenary",
+    "start": "2026-06-23",
+    "end": "2026-06-26",
+    "location": "Iceland [Reykjanesbær]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC Plenary",
+    "name": "69th ECC Plenary",
+    "start": "2026-03-03",
+    "end": "2026-03-06",
+    "location": "Belgium [Bruges]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC SG",
+    "name": "70th ECC SG",
+    "start": "2026-10-14",
+    "end": "2026-10-14",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM62",
+    "name": "FM62 #01",
+    "start": "2025-05-12",
+    "end": "2025-05-12",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC-EC",
+    "name": "ECC-EC Consultation meeting 11 June 2026 (TBC)",
+    "start": "2026-06-11",
+    "end": "2026-06-11",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE45",
+    "name": "SE45#29",
+    "start": "2025-06-12",
+    "end": "2025-06-13",
+    "location": "Hungary [Budapest]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM51",
+    "name": "FM51 #57",
+    "start": "2025-05-13",
+    "end": "2025-05-13",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "PTB",
+    "name": "PTB#2bis on WRC-27 AIs 2 and 4",
+    "start": "2025-04-24",
+    "end": "2025-04-24",
+    "location": "Web Meeting",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "FM22",
+    "name": "FM22 #64",
+    "start": "2025-09-23",
+    "end": "2025-09-26",
+    "location": "Latvia [Riga]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM22",
+    "name": "FM22 #66",
+    "start": "2026-09-08",
+    "end": "2026-09-11",
+    "location": "To Be Decided",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM22",
+    "name": "FM22 #65",
+    "start": "2026-04-13",
+    "end": "2026-04-16",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#90",
+    "start": "2025-12-02",
+    "end": "2025-12-05",
+    "location": "Serbia [Belgrade]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#88 - D2C (WI FM44_47)",
+    "start": "2025-08-20",
+    "end": "2025-08-22",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG FM",
+    "name": "WG FM #112 Norway",
+    "start": "2026-02-09",
+    "end": "2026-02-13",
+    "location": "Norway [Trondheim]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "SE24#117",
+    "start": "2025-12-15",
+    "end": "2025-12-19",
+    "location": "Germany [Mainz]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "SE24#118",
+    "start": "2026-04-20",
+    "end": "2026-04-24",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "PTB",
+    "name": "PTB#4",
+    "start": "2026-03-09",
+    "end": "2026-03-13",
+    "location": "Luxembourg [Luxembourg]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "FM61",
+    "name": "FM61#13",
+    "start": "2025-09-09",
+    "end": "2025-09-10",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM62",
+    "name": "FM62 #02",
+    "start": "2025-08-18",
+    "end": "2025-08-19",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE45",
+    "name": "SE45#30",
+    "start": "2025-09-11",
+    "end": "2025-09-12",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM62",
+    "name": "FM62 #04",
+    "start": "2026-01-21",
+    "end": "2026-01-23",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60#19",
+    "start": "2026-01-27",
+    "end": "2026-01-29",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40 WI_48",
+    "start": "2025-06-26",
+    "end": "2025-06-26",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "PTB",
+    "name": "PTB coordination meeting on WRC-27 AI7",
+    "start": "2025-06-04",
+    "end": "2025-06-04",
+    "location": "Web Meeting",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "FM51",
+    "name": "FM51 #58",
+    "start": "2025-07-07",
+    "end": "2025-07-07",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24#25_4 (WI79#07)",
+    "start": "2025-06-27",
+    "end": "2025-06-27",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24#25_5 (WI76#09)",
+    "start": "2025-07-24",
+    "end": "2025-07-25",
+    "location": "Germany [Mainz]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24#25_6 (W80#04, WI82#02))",
+    "start": "2025-07-31",
+    "end": "2025-07-31",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24#25_7 (WI81#04, WI76#10, WI60#49)",
+    "start": "2025-08-13",
+    "end": "2025-08-14",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "PTA",
+    "name": "PTA#4",
+    "start": "2026-02-03",
+    "end": "2026-02-06",
+    "location": "Czech Republic [Prague]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC PT1",
+    "name": "ECC PT1 #83",
+    "start": "2026-01-12",
+    "end": "2026-01-16",
+    "location": "Spain [Valencia]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "PTA",
+    "name": "PTA#5",
+    "start": "2026-08-25",
+    "end": "2026-08-28",
+    "location": "To Be Decided",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC PT1",
+    "name": "ECC PT1 #84",
+    "start": "2026-05-04",
+    "end": "2026-05-07",
+    "location": "Czech Republic [Prague]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC PT1",
+    "name": "ECC PT1 #85",
+    "start": "2026-09-07",
+    "end": "2026-09-11",
+    "location": "Switzerland [Bern]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40#86 - WI SE40_48",
+    "start": "2025-09-18",
+    "end": "2025-09-18",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40#87",
+    "start": "2025-11-26",
+    "end": "2025-11-28",
+    "location": "United Kingdom [London]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM51",
+    "name": "FM51 #59",
+    "start": "2025-09-25",
+    "end": "2025-09-26",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM62",
+    "name": "FM62 #03",
+    "start": "2025-09-22",
+    "end": "2025-09-22",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#89 (WI FM44_51)",
+    "start": "2025-10-02",
+    "end": "2025-10-02",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE45",
+    "name": "SE45#31",
+    "start": "2025-11-11",
+    "end": "2025-11-13",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE45",
+    "name": "SE45#32",
+    "start": "2025-12-09",
+    "end": "2025-12-11",
+    "location": "France [Maisons-Alfort]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE45",
+    "name": "SE45#33",
+    "start": "2026-04-08",
+    "end": "2026-04-10",
+    "location": "Ireland [Dublin]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG SE",
+    "name": "WG SE#101",
+    "start": "2026-01-26",
+    "end": "2026-01-30",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG SE",
+    "name": "WG SE#102",
+    "start": "2026-05-18",
+    "end": "2026-05-22",
+    "location": "France [Brest]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG SE",
+    "name": "WG SE#103",
+    "start": "2026-09-21",
+    "end": "2026-09-25",
+    "location": "Netherlands [(TBD)]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE19",
+    "name": "#101 SE19 meeting",
+    "start": "2026-03-25",
+    "end": "2026-03-26",
+    "location": "Germany [Berlin]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE19",
+    "name": "#103 SE19 meeting (TBC)",
+    "start": "2026-12-15",
+    "end": "2026-12-17",
+    "location": "To Be Decided",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE19",
+    "name": "#102 SE19 meeting (TBC)",
+    "start": "2026-09-02",
+    "end": "2026-09-04",
+    "location": "To Be Decided",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM62",
+    "name": "FM62 #03Bis",
+    "start": "2025-11-17",
+    "end": "2025-11-17",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "PTB",
+    "name": "PTB#3bis (WRC-27 AI1.10)",
+    "start": "2025-10-24",
+    "end": "2025-10-24",
+    "location": "Web Meeting",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24#25_8 (WI60, 79, 80, 82, 83)",
+    "start": "2025-10-24",
+    "end": "2025-10-24",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24#25_9 (WIs 60, 79, 82, 83)",
+    "start": "2025-11-25",
+    "end": "2025-11-26",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24#25_10 (WI76)",
+    "start": "2025-12-01",
+    "end": "2025-12-01",
+    "location": "France [Toulouse]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60 #20",
+    "start": "2026-03-18",
+    "end": "2026-03-19",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60 DG MFCN #3",
+    "start": "2025-11-13",
+    "end": "2025-11-14",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60 #21",
+    "start": "2026-05-11",
+    "end": "2026-05-13",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "PTC",
+    "name": "PTC#5",
+    "start": "2026-09-21",
+    "end": "2026-09-24",
+    "location": "To Be Decided",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "PTC",
+    "name": "PTC#4",
+    "start": "2026-03-23",
+    "end": "2026-03-26",
+    "location": "United Kingdom [Edinburgh]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "FM22",
+    "name": "FM22 #67",
+    "start": "2027-04-20",
+    "end": "2027-04-23",
+    "location": "To Be Decided",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM61",
+    "name": "FM61#15",
+    "start": "2026-01-21",
+    "end": "2026-01-22",
+    "location": "Ireland [Dublin]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG FM",
+    "name": "WG FM #113 Ireland",
+    "start": "2026-06-01",
+    "end": "2026-06-05",
+    "location": "Ireland [Limerick]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG FM",
+    "name": "WG FM #114 Croatia",
+    "start": "2026-10-05",
+    "end": "2026-10-09",
+    "location": "Croatia [Dubrovnik]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "CPG",
+    "name": "CPG27-5",
+    "start": "2026-06-30",
+    "end": "2026-07-03",
+    "location": "Latvia [Jūrmala]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "SE19",
+    "name": "#100 SE19 meeting",
+    "start": "2026-01-07",
+    "end": "2026-01-09",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE21",
+    "name": "SE21#128",
+    "start": "2026-07-09",
+    "end": "2026-07-10",
+    "location": "Germany [Mainz]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE21",
+    "name": "SE21#129",
+    "start": "2026-11-24",
+    "end": "2026-11-26",
+    "location": "To Be Decided",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40 CG2#1 (WI SE40_49)",
+    "start": "2026-01-07",
+    "end": "2026-01-08",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40#87bis (WI SE40_46)",
+    "start": "2026-01-22",
+    "end": "2026-01-22",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#91 (WI FM44_47 & FM44_53)",
+    "start": "2026-01-19",
+    "end": "2026-01-21",
+    "location": "France [Maisons-Alfort ]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40#88 (WI SE40_49)",
+    "start": "2026-02-18",
+    "end": "2026-02-19",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#92 (WI FM44_52)",
+    "start": "2026-01-26",
+    "end": "2026-01-26",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM51",
+    "name": "FM51 #60",
+    "start": "2026-01-16",
+    "end": "2026-01-16",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM62",
+    "name": "FM62 #05",
+    "start": "2026-06-16",
+    "end": "2026-06-18",
+    "location": "Hungary [Budapest]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "PTB",
+    "name": "PTB#5",
+    "start": "2026-09-14",
+    "end": "2026-09-18",
+    "location": "To Be Decided",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40 CG1#1 (WI SE40_49)",
+    "start": "2026-01-30",
+    "end": "2026-01-30",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM62",
+    "name": "FM62 #06",
+    "start": "2026-09-15",
+    "end": "2026-09-17",
+    "location": "Switzerland [Biel-Bienne]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "PTB",
+    "name": "PTB informal coordination meeting on WRC-27 AI7",
+    "start": "2026-02-02",
+    "end": "2026-02-02",
+    "location": "Web Meeting",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC PT1",
+    "name": "ECC PT1 #87",
+    "start": "2027-04-26",
+    "end": "2027-04-30",
+    "location": "To Be Decided",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC PT1",
+    "name": "ECC PT1 #86",
+    "start": "2027-01-11",
+    "end": "2027-01-15",
+    "location": "To Be Decided",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC PT1",
+    "name": "ECC PT1 #88",
+    "start": "2027-09-06",
+    "end": "2027-09-10",
+    "location": "France",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#93",
+    "start": "2026-03-02",
+    "end": "2026-03-05",
+    "location": "France [Sophia-Antipolis]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24#26_01 (WI79 & WI80)",
+    "start": "2026-03-17",
+    "end": "2026-03-17",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24#26_04 (WI60)",
+    "start": "2026-04-13",
+    "end": "2026-04-13",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24#26_02 (SE24 onboarding, WI84 [& WI79])",
+    "start": "2026-03-24",
+    "end": "2026-03-24",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24#26_03 (WI82 & WI83)",
+    "start": "2026-03-25",
+    "end": "2026-03-25",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "SE24#119",
+    "start": "2026-08-31",
+    "end": "2026-09-04",
+    "location": "Germany [Gerlingen-Schillerhöhe]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "SE24#120",
+    "start": "2026-11-30",
+    "end": "2026-12-04",
+    "location": "To Be Decided",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60 #22",
+    "start": "2026-09-02",
+    "end": "2026-09-04",
+    "location": "To Be Decided",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM61",
+    "name": "FM61#16",
+    "start": "2026-04-16",
+    "end": "2026-04-17",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "CPG",
+    "name": "CPG27-6",
+    "start": "2026-11-02",
+    "end": "2026-11-05",
+    "location": "Norway [TBD]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5D",
+    "name": "WP 5D - IMT Systems",
+    "start": "2026-02-03",
+    "end": "2026-02-12",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "IRIS",
+    "name": "1st Inter-regional Information Session on WRC-27 Preparation (IRIS) - 1st Inter-regional Information Session on WRC-27 Preparation (IRIS)",
+    "start": "2025-12-03",
+    "end": "2025-12-05",
+    "location": "Geneva, Switzerland",
+    "cat": "wrc"
+  },
+  {
+    "org": "ITU-R",
+    "group": "SG 5",
+    "name": "SG 5 - Terrestrial Services",
+    "start": "2025-12-01",
+    "end": "2025-12-02",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5A",
+    "name": "WP 5A - Land mobile service above 30 MHz*(excluding IMT); wireless access in the fixed service; amateur and amateur-satellite services",
+    "start": "2025-11-19",
+    "end": "2025-11-28",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5B",
+    "name": "WP 5B - Maritime mobile service including Global Maritime Distress and Safety System (GMDSS); aeronautical mobile service and radiodetermination service",
+    "start": "2025-11-18",
+    "end": "2025-11-27",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5C",
+    "name": "WP 5C - Fixed wireless systems; HF and other systems below 30 MHz in the fixed and land mobile services",
+    "start": "2025-11-17",
+    "end": "2025-11-28",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "SG 4",
+    "name": "SG 4 - Satellite Services",
+    "start": "2025-11-07",
+    "end": "2025-11-07",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4A",
+    "name": "WP 4A - Efficient Orbit/Spectrum Utilization for FSS and BSS",
+    "start": "2025-10-27",
+    "end": "2025-11-06",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4B",
+    "name": "WP 4B - Systems, air interfaces, performance and availability objectives for FSS, BSS and MSS, including IP-based applications and satellite news gathering",
+    "start": "2025-10-22",
+    "end": "2025-10-28",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4C",
+    "name": "WP 4C - Efficient Orbit/Spectrum Utilization for MSS and RDSS",
+    "start": "2025-10-15",
+    "end": "2025-10-24",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5D",
+    "name": "WP 5D - IMT Systems",
+    "start": "2025-10-07",
+    "end": "2025-10-16",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5D",
+    "name": "WP 5D - IMT Systems",
+    "start": "2025-06-24",
+    "end": "2025-07-03",
+    "location": "Kobe, Japan",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 3J",
+    "name": "WP 3J - Propagation Fundamentals - Starting in the afternoon",
+    "start": "2025-05-26",
+    "end": "2025-06-05",
+    "location": "Geneva, Switzerland",
+    "cat": "sg3"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 3K",
+    "name": "WP 3K - Point-to-Area Propagation - Starting in the afternoon",
+    "start": "2025-05-26",
+    "end": "2025-06-05",
+    "location": "Geneva, Switzerland",
+    "cat": "sg3"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 3M",
+    "name": "WP 3M - Point-to-point and Earth-space propagation - Starting in the afternoon",
+    "start": "2025-05-26",
+    "end": "2025-06-05",
+    "location": "Geneva, Switzerland",
+    "cat": "sg3"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5C",
+    "name": "WP 5C - Fixed wireless systems; HF and other systems below 30 MHz in the fixed and land mobile services",
+    "start": "2025-05-12",
+    "end": "2025-05-22",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5A",
+    "name": "WP 5A - Land mobile service above 30 MHz*(excluding IMT); wireless access in the fixed service; amateur and amateur-satellite services",
+    "start": "2025-05-12",
+    "end": "2025-05-22",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4A",
+    "name": "WP 4A - Efficient Orbit/Spectrum Utilization for FSS and BSS",
+    "start": "2025-05-05",
+    "end": "2025-05-16",
+    "location": "Shanghai, China",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4B",
+    "name": "WP 4B - Systems, air interfaces, performance and availability objectives for FSS, BSS and MSS, including IP-based applications and satellite news gathering",
+    "start": "2025-04-30",
+    "end": "2025-05-06",
+    "location": "Shanghai, China",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5B",
+    "name": "WP 5B - Maritime mobile service including Global Maritime Distress and Safety System (GMDSS); aeronautical mobile service and radiodetermination service",
+    "start": "2025-04-29",
+    "end": "2025-05-08",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4C",
+    "name": "WP 4C - Efficient Orbit/Spectrum Utilization for MSS and RDSS",
+    "start": "2025-04-23",
+    "end": "2025-05-02",
+    "location": "Shanghai, China",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 3J",
+    "name": "WP 3J - Propagation Fundamentals",
+    "start": "2025-02-17",
+    "end": "2025-02-21",
+    "location": "Geneva, Switzerland",
+    "cat": "sg3"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 3K",
+    "name": "WP 3K - Point-to-Area Propagation",
+    "start": "2025-02-17",
+    "end": "2025-02-21",
+    "location": "Geneva, Switzerland",
+    "cat": "sg3"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 3M",
+    "name": "WP 3M - Point-to-point and Earth-space propagation",
+    "start": "2025-02-17",
+    "end": "2025-02-21",
+    "location": "Geneva, Switzerland",
+    "cat": "sg3"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5D",
+    "name": "WP 5D - IMT Systems",
+    "start": "2025-02-04",
+    "end": "2025-02-13",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WRS",
+    "name": "WRS-24 - World Radiocommunication Seminar 2024 (WRS-24)",
+    "start": "2024-12-02",
+    "end": "2024-12-06",
+    "location": "Geneva, Switzerland",
+    "cat": "wrc"
+  },
+  {
+    "org": "ITU-R",
+    "group": "SG 5",
+    "name": "SG 5 - Terrestrial Services",
+    "start": "2024-12-02",
+    "end": "2024-12-03",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5A",
+    "name": "WP 5A - Land mobile service above 30 MHz*(excluding IMT); wireless access in the fixed service; amateur and amateur-satellite services",
+    "start": "2024-11-19",
+    "end": "2024-11-29",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5B",
+    "name": "WP 5B - Maritime mobile service including Global Maritime Distress and Safety System (GMDSS); aeronautical mobile service and radiodetermination service",
+    "start": "2024-11-19",
+    "end": "2024-11-28",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5C",
+    "name": "WP 5C - Fixed wireless systems; HF and other systems below 30 MHz in the fixed and land mobile services",
+    "start": "2024-11-19",
+    "end": "2024-11-28",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "SG 4",
+    "name": "SG 4 - Satellite Services",
+    "start": "2024-11-01",
+    "end": "2024-11-01",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4A",
+    "name": "WP 4A - Efficient Orbit/Spectrum Utilization for FSS and BSS",
+    "start": "2024-10-21",
+    "end": "2024-10-31",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4B",
+    "name": "WP 4B - Systems, air interfaces, performance and availability objectives for FSS, BSS and MSS, including IP-based applications and satellite news gathering",
+    "start": "2024-10-16",
+    "end": "2024-10-22",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4C",
+    "name": "WP 4C - Efficient Orbit/Spectrum Utilization for MSS and RDSS",
+    "start": "2024-10-10",
+    "end": "2024-10-18",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5D",
+    "name": "WP 5D - IMT Systems",
+    "start": "2024-10-03",
+    "end": "2024-10-11",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5D",
+    "name": "WP 5D - IMT Systems",
+    "start": "2024-06-25",
+    "end": "2024-07-02",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 3K",
+    "name": "WP 3K - Point-to-Area Propagation",
+    "start": "2024-05-29",
+    "end": "2024-06-07",
+    "location": "United States [Denver, Colorado]",
+    "cat": "sg3"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 3J",
+    "name": "WP 3J - Propagation Fundamentals",
+    "start": "2024-05-29",
+    "end": "2024-06-07",
+    "location": "United States [Denver, Colorado]",
+    "cat": "sg3"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 3M",
+    "name": "WP 3M - Point-to-point and Earth-space propagation",
+    "start": "2024-05-29",
+    "end": "2024-06-07",
+    "location": "United States [Denver, Colorado]",
+    "cat": "sg3"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5C",
+    "name": "WP 5C - Fixed wireless systems; HF and other systems below 30 MHz in the fixed and land mobile services",
+    "start": "2024-05-14",
+    "end": "2024-05-23",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5B",
+    "name": "WP 5B - Maritime mobile service including Global Maritime Distress and Safety System (GMDSS); aeronautical mobile service and radiodetermination service",
+    "start": "2024-05-14",
+    "end": "2024-05-24",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5A",
+    "name": "WP 5A - Land mobile service above 30 MHz*(excluding IMT); wireless access in the fixed service; amateur and amateur-satellite services",
+    "start": "2024-05-14",
+    "end": "2024-05-24",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "SG 5",
+    "name": "SG 5 - Terrestrial Services",
+    "start": "2024-05-13",
+    "end": "2024-05-13",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "SG 4",
+    "name": "SG 4 - Satellite Services",
+    "start": "2024-05-10",
+    "end": "2024-05-10",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4A",
+    "name": "WP 4A - Efficient Orbit/Spectrum Utilization for FSS and BSS",
+    "start": "2024-05-01",
+    "end": "2024-05-09",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4B",
+    "name": "WP 4B - Systems, air interfaces, performance and availability objectives for FSS, BSS and MSS, including IP-based applications and satellite news gathering",
+    "start": "2024-04-29",
+    "end": "2024-05-03",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4C",
+    "name": "WP 4C - Efficient Orbit/Spectrum Utilization for MSS and RDSS",
+    "start": "2024-04-24",
+    "end": "2024-04-30",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "SG 4",
+    "name": "SG 4 - Satellite Services",
+    "start": "2024-04-23",
+    "end": "2024-04-23",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5D",
+    "name": "WP 5D - IMT Systems",
+    "start": "2024-01-31",
+    "end": "2024-02-07",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4B",
+    "name": "WP 4B - Systems, air interfaces, performance and availability objectives for FSS, BSS and MSS, including IP-based applications and satellite news gathering",
+    "start": "2024-01-23",
+    "end": "2024-01-23",
+    "location": "E-Meeting",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "CPM",
+    "name": "CPM27-1 - First Session of the Conference Preparatory Meeting for WRC-27 (CPM27-1)",
+    "start": "2023-12-18",
+    "end": "2023-12-19",
+    "location": "Dubai, United Arab Emirates",
+    "cat": "wrc"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WRC-27",
+    "name": "WRC-23 - World Radiocommunication Conference 2023 (WRC-23)",
+    "start": "2023-11-20",
+    "end": "2023-12-15",
+    "location": "Dubai, United Arab Emirates",
+    "cat": "wrc"
+  },
+  {
+    "org": "ITU-R",
+    "group": "RA-27",
+    "name": "RA-23 - Radiocommunication Assembly 2023 (RA-23)",
+    "start": "2023-11-13",
+    "end": "2023-11-17",
+    "location": "Dubai, United Arab Emirates",
+    "cat": "wrc"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WRC-27",
+    "name": "3rd ITU Inter-regional Workshop on WRC-23 Preparation - 3rd ITU Inter-regional Workshop on WRC-23 Preparation",
+    "start": "2023-09-27",
+    "end": "2023-09-29",
+    "location": "Geneva, Switzerland",
+    "cat": "wrc"
+  },
+  {
+    "org": "ITU-R",
+    "group": "SG 5",
+    "name": "SG 5 - Terrestrial Services",
+    "start": "2023-09-25",
+    "end": "2023-09-26",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5A",
+    "name": "WP 5A - Land mobile service above 30 MHz*(excluding IMT); wireless access in the fixed service; amateur and amateur-satellite services",
+    "start": "2023-09-13",
+    "end": "2023-09-22",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5B",
+    "name": "WP 5B - Maritime mobile service including Global Maritime Distress and Safety System (GMDSS); aeronautical mobile service and radiodetermination service",
+    "start": "2023-07-10",
+    "end": "2023-07-21",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "SG 4",
+    "name": "SG 4 - Satellite Services",
+    "start": "2023-07-07",
+    "end": "2023-07-07",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4A",
+    "name": "WP 4A - Efficient Orbit/Spectrum Utilization for FSS and BSS",
+    "start": "2023-06-27",
+    "end": "2023-07-06",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4B",
+    "name": "WP 4B - Systems, air interfaces, performance and availability objectives for FSS, BSS and MSS, including IP-based applications and satellite news gathering",
+    "start": "2023-06-26",
+    "end": "2023-06-30",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 4C",
+    "name": "WP 4C - Efficient Orbit/Spectrum Utilization for MSS and RDSS",
+    "start": "2023-06-21",
+    "end": "2023-06-27",
+    "location": "Geneva, Switzerland",
+    "cat": "sg4"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5D",
+    "name": "WP 5D - IMT Systems",
+    "start": "2023-06-12",
+    "end": "2023-06-22",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 3J",
+    "name": "WP 3J - Propagation Fundamentals",
+    "start": "2023-05-22",
+    "end": "2023-06-01",
+    "location": "Geneva, Switzerland",
+    "cat": "sg3"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 3K",
+    "name": "WP 3K - Point-to-Area Propagation",
+    "start": "2023-05-22",
+    "end": "2023-06-01",
+    "location": "Geneva, Switzerland",
+    "cat": "sg3"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 3M",
+    "name": "WP 3M - Point-to-point and Earth-space propagation",
+    "start": "2023-05-22",
+    "end": "2023-06-01",
+    "location": "Geneva, Switzerland",
+    "cat": "sg3"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5A",
+    "name": "WP 5A - Land mobile service above 30 MHz*(excluding IMT); wireless access in the fixed service; amateur and amateur-satellite services",
+    "start": "2023-05-09",
+    "end": "2023-05-18",
+    "location": "Merida, Mexico",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5C",
+    "name": "WP 5C - Fixed wireless systems; HF and other systems below 30 MHz in the fixed and land mobile services",
+    "start": "2023-05-09",
+    "end": "2023-05-17",
+    "location": "Merida, Mexico",
+    "cat": "sg5"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WRC-27",
+    "name": "CPM23-2 - Second Session of the Conference Preparatory Meeting for WRC-23 (CPM23-2)",
+    "start": "2023-03-27",
+    "end": "2023-04-06",
+    "location": "Geneva, Switzerland",
+    "cat": "wrc"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5D",
+    "name": "WP 5D - IMT Systems",
+    "start": "2023-01-31",
+    "end": "2023-02-09",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC PT1",
+    "name": "ECC PT1 #74",
+    "start": "2023-04-24",
+    "end": "2023-04-28",
+    "location": "Norway [Trondheim]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC PT1",
+    "name": "ECC PT1 #73",
+    "start": "2023-01-09",
+    "end": "2023-01-13",
+    "location": "United Kingdom [Edinburgh]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC PT1",
+    "name": "ECC PT1 #76",
+    "start": "2023-09-06",
+    "end": "2023-09-08",
+    "location": "Germany [Berlin]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC PT1",
+    "name": "ECC PT1 #75 - WRC-23 subjects only",
+    "start": "2023-07-19",
+    "end": "2023-07-21",
+    "location": "Latvia [Riga]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "WG FM",
+    "name": "104th WG FM",
+    "start": "2023-02-13",
+    "end": "2023-02-17",
+    "location": "Germany [Berlin]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG FM",
+    "name": "105th WG FM",
+    "start": "2023-06-12",
+    "end": "2023-06-16",
+    "location": "Belgium [Brussels]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "SE24 M108",
+    "start": "2023-01-09",
+    "end": "2023-01-11",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC SG",
+    "name": "60th ECC SG",
+    "start": "2023-02-22",
+    "end": "2023-02-22",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC SG",
+    "name": "61st ECC SG",
+    "start": "2023-06-20",
+    "end": "2023-06-20",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC-EC",
+    "name": "ECC-EC Consultation meeting 21 June 2023",
+    "start": "2023-06-21",
+    "end": "2023-06-21",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE21",
+    "name": "SE21#119",
+    "start": "2023-04-12",
+    "end": "2023-04-14",
+    "location": "United Kingdom [London]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE21",
+    "name": "SE21#118",
+    "start": "2023-02-20",
+    "end": "2023-02-23",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE45",
+    "name": "SE45#19",
+    "start": "2023-02-28",
+    "end": "2023-03-03",
+    "location": "France [Rennes]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE21",
+    "name": "SE21#120",
+    "start": "2023-10-18",
+    "end": "2023-10-20",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC SG",
+    "name": "Informal ECC SG",
+    "start": "2023-01-20",
+    "end": "2023-01-20",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40#79",
+    "start": "2023-01-17",
+    "end": "2023-01-19",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "CPG",
+    "name": "CPG PTB#6bis",
+    "start": "2023-01-27",
+    "end": "2023-01-27",
+    "location": "TBD",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#72",
+    "start": "2023-01-25",
+    "end": "2023-01-25",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG SE",
+    "name": "WG SE #94",
+    "start": "2023-06-05",
+    "end": "2023-06-09",
+    "location": "Switzerland [Basel]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60 #1 Start-Up Meeting",
+    "start": "2023-02-07",
+    "end": "2023-02-07",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC PT1",
+    "name": "ECC PT1 #77",
+    "start": "2024-01-23",
+    "end": "2024-01-25",
+    "location": "Netherlands [Groningen]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60 #2",
+    "start": "2023-03-22",
+    "end": "2023-03-23",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60 #3",
+    "start": "2023-05-15",
+    "end": "2023-05-16",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC SG",
+    "name": "Informal ECC SG",
+    "start": "2023-04-18",
+    "end": "2023-04-18",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE45",
+    "name": "SE45#20",
+    "start": "2023-06-26",
+    "end": "2023-06-28",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE45",
+    "name": "SE45#21",
+    "start": "2023-10-09",
+    "end": "2023-10-13",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE19",
+    "name": "SE19 #93",
+    "start": "2023-04-17",
+    "end": "2023-04-20",
+    "location": "Hungary [Budapest]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60 #4",
+    "start": "2023-06-07",
+    "end": "2023-06-07",
+    "location": "Netherlands [Amersfoort]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40#80",
+    "start": "2023-05-15",
+    "end": "2023-05-17",
+    "location": "France [Brest]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "SE24 M109",
+    "start": "2023-05-02",
+    "end": "2023-05-03",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC-EC",
+    "name": "ECC-EC Consultation meeting 18 January 2024",
+    "start": "2024-01-18",
+    "end": "2024-01-18",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC-EC",
+    "name": "ECC-EC Consultation meeting 13 June 2024",
+    "start": "2024-06-13",
+    "end": "2024-06-13",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC SG",
+    "name": "62nd ECC SG",
+    "start": "2024-02-21",
+    "end": "2024-02-21",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC SG",
+    "name": "64th ECC SG",
+    "start": "2024-10-23",
+    "end": "2024-10-23",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC SG",
+    "name": "63rd ECC SG",
+    "start": "2024-06-12",
+    "end": "2024-06-12",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC Plenary",
+    "name": "64th ECC Plenary",
+    "start": "2024-06-25",
+    "end": "2024-06-28",
+    "location": "Norway [Kristiansand]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC Plenary",
+    "name": "63rd ECC Plenary",
+    "start": "2024-03-05",
+    "end": "2024-03-08",
+    "location": "Lithuania [Vilnius]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC Plenary",
+    "name": "65th ECC Plenary",
+    "start": "2024-11-05",
+    "end": "2024-11-08",
+    "location": "Austria [Vienna]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE21",
+    "name": "SE21 webmeeting on receiver resilience (WI SE21_24)",
+    "start": "2023-05-30",
+    "end": "2023-05-31",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "PTB",
+    "name": "CG AI 4 - PTB issues #1",
+    "start": "2023-06-09",
+    "end": "2023-06-09",
+    "location": "TBD",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC PT1",
+    "name": "XO ECC PT1 - radio altimeters",
+    "start": "2023-06-26",
+    "end": "2023-06-26",
+    "location": "TBD",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#74 - RSPG response on MSS 2GHz",
+    "start": "2023-05-31",
+    "end": "2023-05-31",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#75",
+    "start": "2023-08-30",
+    "end": "2023-09-01",
+    "location": "Switzerland [Buchillon]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "SE24#110",
+    "start": "2023-08-28",
+    "end": "2023-08-29",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40#81",
+    "start": "2023-09-11",
+    "end": "2023-09-13",
+    "location": "United Kingdom [Jodrell Bank]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG FM",
+    "name": "WG FM #106",
+    "start": "2024-02-12",
+    "end": "2024-02-16",
+    "location": "Greece [Thessaloniki]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG FM",
+    "name": "WG FM #107",
+    "start": "2024-06-03",
+    "end": "2024-06-07",
+    "location": "Sweden [Stockholm]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG FM",
+    "name": "WG FM #108",
+    "start": "2024-10-14",
+    "end": "2024-10-18",
+    "location": "Switzerland [Montreux]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE45",
+    "name": "#1 LS to SE45",
+    "start": "2023-06-12",
+    "end": "2023-06-12",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE45",
+    "name": "#2 LS to SE45",
+    "start": "2023-06-19",
+    "end": "2023-06-19",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60 #5",
+    "start": "2023-10-03",
+    "end": "2023-10-05",
+    "location": "Norway [Lillestrøm]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60 #6",
+    "start": "2024-02-05",
+    "end": "2024-02-07",
+    "location": "ECO Office [Copenhagen]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG FM",
+    "name": "WG FM #105Bis",
+    "start": "2023-10-12",
+    "end": "2023-10-13",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG SE",
+    "name": "WG SE#96",
+    "start": "2024-05-06",
+    "end": "2024-05-10",
+    "location": "Hungary [Budapest]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG SE",
+    "name": "WG SE#97",
+    "start": "2024-09-23",
+    "end": "2024-09-27",
+    "location": "Austria [Vienna]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE45",
+    "name": "SE45#20.1 (WAS/RLAN Parameters)",
+    "start": "2023-09-04",
+    "end": "2023-09-04",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE19",
+    "name": "SE19 #94",
+    "start": "2023-09-05",
+    "end": "2023-09-07",
+    "location": "Serbia [Belgrade]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "WG FM",
+    "name": "WG FM #105Bis Minutes",
+    "start": "2023-10-17",
+    "end": "2023-10-17",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "CPG",
+    "name": "CPG PTB#8bis",
+    "start": "2023-09-04",
+    "end": "2023-09-04",
+    "location": "TBD",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "PTA",
+    "name": "PTA#9 Minutes reconciliation meeting",
+    "start": "2023-09-06",
+    "end": "2023-09-06",
+    "location": "TBD",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "SE45",
+    "name": "SE45#22",
+    "start": "2024-01-08",
+    "end": "2024-01-11",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "PTA",
+    "name": "PTA#9 Minutes reconciliation -- SECOND SESSION",
+    "start": "2023-09-07",
+    "end": "2023-09-07",
+    "location": "TBD",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "SE24#111",
+    "start": "2024-01-15",
+    "end": "2024-01-16",
+    "location": "Germany [Munich]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC PT1",
+    "name": "ECC PT1 #78",
+    "start": "2024-05-28",
+    "end": "2024-05-31",
+    "location": "Greece [Athens]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC PT1",
+    "name": "ECC PT1 #79",
+    "start": "2024-09-09",
+    "end": "2024-09-13",
+    "location": "Estonia [Tallinn]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#76 - SRD communications with satellites - 11 Oct 2023",
+    "start": "2023-10-11",
+    "end": "2023-10-11",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#77 - SRD communications with satellites",
+    "start": "2023-10-26",
+    "end": "2023-10-26",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE45",
+    "name": "SE45#23",
+    "start": "2024-04-15",
+    "end": "2024-04-19",
+    "location": "Germany [Mainz]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE45",
+    "name": "SE45#22.1",
+    "start": "2024-02-08",
+    "end": "2024-02-09",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM61",
+    "name": "FM61#1",
+    "start": "2023-11-06",
+    "end": "2023-11-06",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM61",
+    "name": "FM61#3",
+    "start": "2024-02-01",
+    "end": "2024-02-02",
+    "location": "France [Maisons-Alfort]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC SG",
+    "name": "Informal ECC SG",
+    "start": "2024-01-17",
+    "end": "2024-01-17",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE21",
+    "name": "SE21#121",
+    "start": "2024-01-15",
+    "end": "2024-01-17",
+    "location": "Germany [Mainz]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM61",
+    "name": "FM61#2",
+    "start": "2024-01-12",
+    "end": "2024-01-12",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#78",
+    "start": "2024-01-29",
+    "end": "2024-01-31",
+    "location": "France [Maisons-Alfort, Paris]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE19",
+    "name": "#95 SE19 meeting",
+    "start": "2024-04-09",
+    "end": "2024-04-11",
+    "location": "Germany [Berlin]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE19",
+    "name": "#96 SE19 meeting",
+    "start": "2024-09-03",
+    "end": "2024-09-05",
+    "location": "France [Brest]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE45",
+    "name": "SE45#24",
+    "start": "2024-07-08",
+    "end": "2024-07-12",
+    "location": "Switzerland [Biel/Bienne]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM61",
+    "name": "FM61#4 on ITS",
+    "start": "2024-03-27",
+    "end": "2024-03-28",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40#82",
+    "start": "2024-02-27",
+    "end": "2024-02-29",
+    "location": "Netherlands [Groningen]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM61",
+    "name": "FM61#5",
+    "start": "2024-04-29",
+    "end": "2024-04-30",
+    "location": "ECO Office [Copenhagen]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE21",
+    "name": "SE21#122",
+    "start": "2024-04-10",
+    "end": "2024-04-12",
+    "location": "Germany [Mainz]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "SE24#112",
+    "start": "2024-04-25",
+    "end": "2024-04-26",
+    "location": "Germany [Mainz]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC PT1",
+    "name": "XO ECC PT1 3.8-4.2 GHz",
+    "start": "2024-02-27",
+    "end": "2024-02-27",
+    "location": "TBD",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "FM61",
+    "name": "FM61#6",
+    "start": "2024-05-13",
+    "end": "2024-05-14",
+    "location": "France [Maisons-Alfort]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#79",
+    "start": "2024-05-13",
+    "end": "2024-05-15",
+    "location": "ECO Office [Copenhagen]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60#7",
+    "start": "2024-03-13",
+    "end": "2024-03-14",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60#8",
+    "start": "2024-04-03",
+    "end": "2024-04-05",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60#10",
+    "start": "2024-05-02",
+    "end": "2024-05-03",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24 WI76#2",
+    "start": "2024-03-14",
+    "end": "2024-03-14",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60#12",
+    "start": "2024-09-16",
+    "end": "2024-09-18",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "CG 4GHz #20 (FM60 Joint meeting)",
+    "start": "2024-04-17",
+    "end": "2024-04-18",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24 WI77#1",
+    "start": "2024-03-15",
+    "end": "2024-03-15",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "CPG",
+    "name": "CPG27-1",
+    "start": "2024-05-23",
+    "end": "2024-05-24",
+    "location": "ECO Office",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC PT1",
+    "name": "FM60#9 / PT1 CG 4GHz joint meeting (register through PT1!)",
+    "start": "2024-04-17",
+    "end": "2024-04-18",
+    "location": "TBD",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "FM61",
+    "name": "FM61#8",
+    "start": "2024-09-30",
+    "end": "2024-10-02",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE21",
+    "name": "SE21#122-1 (continuation)",
+    "start": "2024-04-22",
+    "end": "2024-04-22",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE21",
+    "name": "SE21#122-2 (continuation)",
+    "start": "2024-04-26",
+    "end": "2024-04-26",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE45",
+    "name": "SE45#25",
+    "start": "2024-08-26",
+    "end": "2024-08-29",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC SG",
+    "name": "Informal ECC SG",
+    "start": "2024-05-03",
+    "end": "2024-05-03",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "SE24#113",
+    "start": "2024-09-09",
+    "end": "2024-09-11",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60#11",
+    "start": "2024-05-21",
+    "end": "2024-05-22",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM61",
+    "name": "FM61#7",
+    "start": "2024-06-18",
+    "end": "2024-06-18",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40#83",
+    "start": "2024-07-10",
+    "end": "2024-07-12",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "CPG",
+    "name": "CPG27-2",
+    "start": "2024-12-10",
+    "end": "2024-12-13",
+    "location": "Czech Republic [Prague]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#80 - D2C (WI FM44_47)",
+    "start": "2024-07-08",
+    "end": "2024-07-09",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#81",
+    "start": "2024-09-03",
+    "end": "2024-09-05",
+    "location": "Switzerland [Biel/Bienne]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE21",
+    "name": "SE21#123",
+    "start": "2024-07-17",
+    "end": "2024-07-19",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24 (WIs 76, 79, 77, 60)",
+    "start": "2024-06-26",
+    "end": "2024-06-26",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24 (WIs 76, 77, 60, 78, 79)",
+    "start": "2024-07-08",
+    "end": "2024-07-09",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "PTB",
+    "name": "PTB#1",
+    "start": "2024-09-18",
+    "end": "2024-09-20",
+    "location": "France [Maisons-Alfort]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "CPG",
+    "name": "CPG27-1bis",
+    "start": "2024-07-09",
+    "end": "2024-07-09",
+    "location": "Web Meeting",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "PTA",
+    "name": "PTA#1",
+    "start": "2024-08-28",
+    "end": "2024-08-30",
+    "location": "Germany [Berlin]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "PTC",
+    "name": "PTC#1",
+    "start": "2024-10-01",
+    "end": "2024-10-04",
+    "location": "Switzerland [Biel/Bienne]",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "PTC",
+    "name": "PTC#0",
+    "start": "2024-09-16",
+    "end": "2024-09-16",
+    "location": "Web Meeting",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "SE21",
+    "name": "SE21#124",
+    "start": "2024-11-26",
+    "end": "2024-11-28",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24 WI60#43",
+    "start": "2024-09-03",
+    "end": "2024-09-03",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC-EC",
+    "name": "ECC-EC Consultation meeting 13 December 2024",
+    "start": "2024-12-13",
+    "end": "2024-12-13",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC SG",
+    "name": "Informal ECC SG",
+    "start": "2024-09-06",
+    "end": "2024-09-06",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE45",
+    "name": "SE45#26",
+    "start": "2024-12-16",
+    "end": "2024-12-20",
+    "location": "Germany [Munich]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "SE24#114",
+    "start": "2024-12-16",
+    "end": "2024-12-18",
+    "location": "Germany [Mainz]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#82 - D2C (WI FM44_47)",
+    "start": "2024-11-12",
+    "end": "2024-11-13",
+    "location": "France [Maisons-Alfort]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#83",
+    "start": "2024-12-18",
+    "end": "2024-12-20",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "PTA",
+    "name": "PTA#1bis",
+    "start": "2024-11-04",
+    "end": "2024-11-04",
+    "location": "Web Meeting",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "ECC SG",
+    "name": "Informal ECC SG",
+    "start": "2024-12-06",
+    "end": "2024-12-06",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24 WI60#44 (LS to NATO)",
+    "start": "2024-09-16",
+    "end": "2024-09-16",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40#84",
+    "start": "2024-11-27",
+    "end": "2024-11-29",
+    "location": "United Kingdom [Edinburgh]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM61",
+    "name": "FM61#9",
+    "start": "2024-11-15",
+    "end": "2024-11-15",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM60",
+    "name": "FM60#13",
+    "start": "2024-11-18",
+    "end": "2024-11-20",
+    "location": "Norway [Kristiansand]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24 (WIs 79, 76, 80, 60, 77, 78)",
+    "start": "2024-11-14",
+    "end": "2024-11-15",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE24",
+    "name": "CG SE24 (WIs 77, 79, 81)",
+    "start": "2024-12-06",
+    "end": "2024-12-06",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#83 Administrations only",
+    "start": "2024-12-20",
+    "end": "2024-12-20",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "APT",
+    "group": "SATRC Workshop on Spectrum",
+    "name": "SATRC Workshop on Spectrum",
+    "start": "2023-01-31",
+    "end": "2023-02-02",
+    "location": "New Delhi, India (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APG23-5",
+    "name": "The 5th Meeting of the APT Conference Preparatory Group for WRC-23 (APG23-5)",
+    "start": "2023-02-20",
+    "end": "2023-02-25",
+    "location": "Busan. Republic of Korea (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "CGSP-1",
+    "name": "The 1st Meeting of the Correspondence Group on the Strategic Plan of the Asia-Pacific Telecommunity for 2024 – 2026 (CGSP-1)",
+    "start": "2023-04-11",
+    "end": "2023-04-12",
+    "location": "Virtual Meeting",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "ASTAP-35",
+    "name": "The 35th APT Standardization Program Forum (ASTAP-35)",
+    "start": "2023-04-17",
+    "end": "2023-04-20",
+    "location": "Bangkok, Thailand (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APT WTSA24-1",
+    "name": "The 1st Meeting of APT Preparatory Group for WTSA-24 (APT WTSA24-1)",
+    "start": "2023-04-21",
+    "end": "2023-04-21",
+    "location": "Bangkok, Thailand (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "CGSP-2",
+    "name": "The 2nd Meeting of the Correspondence Group on the Strategic Plan of the Asia-Pacific Telecommunity for 2024 – 2026 (CGSP-2)",
+    "start": "2023-05-03",
+    "end": "2023-05-03",
+    "location": "Virtual Meeting",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "SATRC Workshop on Policy, Regu",
+    "name": "SATRC Workshop on Policy, Regulation and Services",
+    "start": "2023-05-08",
+    "end": "2023-05-10",
+    "location": "Islamabad, Pakistan (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "AWG-31",
+    "name": "The 31st Meeting of APT Wireless Group (AWG-31)",
+    "start": "2023-05-22",
+    "end": "2023-05-26",
+    "location": "Ha Noi, Viet Nam (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "PRF-23",
+    "name": "The 23rd APT Policy and Regulatory Forum (PRF-23)",
+    "start": "2023-06-20",
+    "end": "2023-06-22",
+    "location": "Nadi, Fiji (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "The Meeting of the SATRC Worki",
+    "name": "The Meeting of the SATRC Working Group on Policy, Regulation and Services",
+    "start": "2023-07-04",
+    "end": "2023-07-06",
+    "location": "Maafushi Island, Maldives",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "WGMC-11",
+    "name": "The 11th Meeting of the Working Group of MC on APT Legal Instruments (WGMC-11)",
+    "start": "2023-08-01",
+    "end": "2023-08-02",
+    "location": "Bangkok, Thailand",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "CGSP-3",
+    "name": "The 3rd Meeting of the Correspondence Group for the Strategic Plan of the Asia-Pacific Telecommunity for 2024 – 2026 (CGSP-3)",
+    "start": "2023-08-03",
+    "end": "2023-08-04",
+    "location": "Bangkok, Thailand",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APG23-6",
+    "name": "The 6th Meeting of the APT Conference Preparatory Group for WRC-23 (APG23-6)",
+    "start": "2023-08-14",
+    "end": "2023-08-19",
+    "location": "Brisbane, Australia (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "PRFP-16",
+    "name": "The 16th APT Policy and Regulation Forum for Pacific (PRFP-16)",
+    "start": "2023-08-30",
+    "end": "2023-09-01",
+    "location": "Port Moresby, Papua New Guinea",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APT Symposium on Inclusive Con",
+    "name": "APT Symposium on Inclusive Connectivity",
+    "start": "2023-09-11",
+    "end": "2023-09-12",
+    "location": "Bangkok, Thailand (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "The Meeting of the SATRC Worki",
+    "name": "The Meeting of the SATRC Working Group on Spectrum",
+    "start": "2023-09-19",
+    "end": "2023-09-21",
+    "location": "Colombo, Sri Lanka",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "SATRC-24",
+    "name": "The 24th Meeting of the South Asian Telecommunication Regulators' Council (SATRC-24)",
+    "start": "2023-10-03",
+    "end": "2023-10-05",
+    "location": "Dhaka, Bangladesh",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "ADF-20",
+    "name": "The 20th APT Telecommunication/ICT Development Forum (ADF-20)",
+    "start": "2023-10-09",
+    "end": "2023-10-10",
+    "location": "Kuala Lumpur, Malaysia (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "GA-16 Prep",
+    "name": "The Preparatory Meeting for the 16th Session of the General Assembly of the APT (GA-16 Prep)",
+    "start": "2023-11-05",
+    "end": "2023-11-05",
+    "location": "Bangkok, Thailand",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "GA-16",
+    "name": "The 16th Session of the General Assembly of the APT (GA-16)",
+    "start": "2023-11-06",
+    "end": "2023-11-07",
+    "location": "Bangkok, Thailand",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "MC-47",
+    "name": "The 47th Session of the Management Committee of the APT (MC-47)",
+    "start": "2023-11-08",
+    "end": "2023-11-11",
+    "location": "Bangkok, Thailand",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APT WTSA24-2",
+    "name": "The 2nd Meeting of the APT Preparatory Group for WTSA-24 (APT WTSA24-2)",
+    "start": "2024-02-05",
+    "end": "2024-02-06",
+    "location": "Virtual/Online Meeting",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "AWG-32",
+    "name": "The 32nd Meeting of the APT Wireless Group (AWG-32)",
+    "start": "2024-03-04",
+    "end": "2024-03-08",
+    "location": "Pattaya, Thailand (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APT WTSA24-3",
+    "name": "The 3rd Meeting of the APT Preparatory Group for WTSA-24 (APT WTSA24-3)",
+    "start": "2024-04-30",
+    "end": "2024-05-02",
+    "location": "Siem Reap, Cambodia (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "Meeting of the SATRC Working G",
+    "name": "Meeting of the SATRC Working Group on Spectrum",
+    "start": "2024-05-07",
+    "end": "2024-05-09",
+    "location": "Lalitpur, Nepal",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "Meeting of the SATRC Working G",
+    "name": "Meeting of the SATRC Working Group on Policy, Regulation and Services",
+    "start": "2024-05-14",
+    "end": "2024-05-16",
+    "location": "Islambad, Pakistan",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "ASTAP-36",
+    "name": "The 36th APT Standardization Program Forum (ASTAP-36)",
+    "start": "2024-05-20",
+    "end": "2024-05-24",
+    "location": "Bangkok, Thailand (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "Virtual Interim Meeting of Wor",
+    "name": "Virtual Interim Meeting of Working Group 3 of the APT WTSA-24",
+    "start": "2024-05-27",
+    "end": "2024-05-29",
+    "location": "Virtual Meeting",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APG27-1",
+    "name": "The 1st Meeting of the APT Conference Preparatory Group for WRC-27 (APG27-1)",
+    "start": "2024-06-03",
+    "end": "2024-06-06",
+    "location": "Shanghai, People’s Republic of China (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APT WTSA24-4",
+    "name": "The 4th Meeting of APT Preparatory Group for WTSA-24 (APT WTSA24-4)",
+    "start": "2024-06-25",
+    "end": "2024-06-28",
+    "location": "Adelaide, Australia (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "PRF-24",
+    "name": "The 24th APT Policy and Regulatory Forum (PRF-24)",
+    "start": "2024-07-16",
+    "end": "2024-07-18",
+    "location": "Chiang Mai, Thailand (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APT WTDC25-1",
+    "name": "The 1st Meeting of the APT Preparatory Group for WTDC-25 (APT WTDC25-1)",
+    "start": "2024-07-19",
+    "end": "2024-07-19",
+    "location": "Chiang Mai, Thailand (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "CGMM-1",
+    "name": "The 1st Meeting of the Correspondence Group for the APT Ministerial Meeting (CGMM-1)",
+    "start": "2024-07-19",
+    "end": "2024-07-19",
+    "location": "Chiang Mai, Thailand (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "Postponed",
+    "name": "APT Symposium on Spectrum Management (Postponed)",
+    "start": "2024-07-29",
+    "end": "2024-07-31",
+    "location": "Dhaka, Bangladesh",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "ADF-21",
+    "name": "The 21st APT Telecommunication/ICT Development Forum (ADF-21)",
+    "start": "2024-08-06",
+    "end": "2024-08-08",
+    "location": "Jakarta, Indonesia (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APT WTSA24-5",
+    "name": "The 5th Meeting of APT Preparatory Group for WTSA-24 (APT WTSA24-5)",
+    "start": "2024-08-19",
+    "end": "2024-08-23",
+    "location": "Bangkok, Thailand (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "PRFP-17",
+    "name": "The 17th APT Policy and Regulation Forum for Pacific (PRFP-17)",
+    "start": "2024-09-03",
+    "end": "2024-09-05",
+    "location": "Nuku’alofa, Tonga (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "AWG-33",
+    "name": "The 33rd Meeting of the APT Wireless Group (AWG-33)",
+    "start": "2024-09-09",
+    "end": "2024-09-13",
+    "location": "Bangkok, Thailand (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "SAPIX-WSRTT",
+    "name": "SATRC Workshop on Recent Trends and Technologies (SAPIX-WSRTT)",
+    "start": "2024-09-30",
+    "end": "2024-10-02",
+    "location": "Tehran, Islamic Republic of Iran (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "WGMC-12",
+    "name": "The 12th Meeting of the Working Group of MC on APT Legal Instruments (WGMC-12)",
+    "start": "2024-10-08",
+    "end": "2024-10-09",
+    "location": "Virtual Meeting",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "SATRC-25",
+    "name": "The 25th Meeting of the South Asian Telecommunication Regulators' Council (SATRC-25)",
+    "start": "2024-11-11",
+    "end": "2024-11-13",
+    "location": "New Delhi, India (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "SPA-2024",
+    "name": "Seminar on Progress in APT for the year 2024 (SPA-2024)",
+    "start": "2024-11-18",
+    "end": "2024-11-18",
+    "location": "Kuala Lumpur, Malaysia (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "MC-48",
+    "name": "The 48th Session of the Management Committee of the APT (MC-48)",
+    "start": "2024-11-19",
+    "end": "2024-11-22",
+    "location": "Kuala Lumpur, Malaysia (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "CGMM-2",
+    "name": "The 2nd Meeting of the Correspondence Group for the APT Ministerial Meeting 2025 (CGMM-2)",
+    "start": "2024-12-03",
+    "end": "2024-12-05",
+    "location": "Virtual/Online Meeting",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APT WTDC25-2",
+    "name": "The 2nd Meeting of the APT Preparatory Group for WTDC-25 (APT WTDC25-2)",
+    "start": "2024-12-10",
+    "end": "2024-12-11",
+    "location": "Virtual/Online Meeting",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "SATRC Workshop on Spectrum",
+    "name": "SATRC Workshop on Spectrum",
+    "start": "2025-01-21",
+    "end": "2025-01-23",
+    "location": "Goa, India (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "CGMM-3",
+    "name": "The 3rd Meeting of the Correspondence Group for the APT Ministerial Meeting 2025 (CGMM-3)",
+    "start": "2025-02-04",
+    "end": "2025-02-06",
+    "location": "Bangkok, Thailand",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APT Symposium on Spectrum Mana",
+    "name": "APT Symposium on Spectrum Management",
+    "start": "2025-02-18",
+    "end": "2025-02-20",
+    "location": "Dhaka, Bangladesh",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APT WTDC25-3",
+    "name": "The 3rd Meeting of the APT Preparatory Group for WTDC-25 (APT WTDC25-3)",
+    "start": "2025-03-17",
+    "end": "2025-03-18",
+    "location": "Bangkok, Thailand (Hybrid)",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "AWG-34",
+    "name": "The 34th Meeting of the APT Wireless Group (AWG-34)",
+    "start": "2025-03-31",
+    "end": "2025-04-04",
+    "location": "Kathmandu, Nepal",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "ASTAP-37",
+    "name": "The 37th APT Standardization Program Forum (ASTAP-37)",
+    "start": "2025-04-21",
+    "end": "2025-04-25",
+    "location": "Bangkok, Thailand",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "SATRC Workshop on Policy, Regu",
+    "name": "SATRC Workshop on Policy, Regulation and Services",
+    "start": "2025-04-28",
+    "end": "2025-04-30",
+    "location": "Dhaka, Bangladesh",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "SOM",
+    "name": "Senior Officials Meeting for APT-MM (SOM)",
+    "start": "2025-05-29",
+    "end": "2025-05-29",
+    "location": "Tokyo, Japan",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APT-MM",
+    "name": "Asia-Pacific Telecommunity Ministerial Meeting (APT-MM)",
+    "start": "2025-05-30",
+    "end": "2025-05-31",
+    "location": "Tokyo, Japan",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APT WTDC25-4",
+    "name": "The 4th Meeting of the APT Preparatory Group for WTDC-25 (APT WTDC25-4)",
+    "start": "2025-07-14",
+    "end": "2025-07-18",
+    "location": "Pattaya, Thailand",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APT PP26-1",
+    "name": "The 1st Meeting of the APT Preparatory Group for PP-26 (APT PP26-1)",
+    "start": "2025-07-18",
+    "end": "2025-07-18",
+    "location": "Pattaya, Thailand",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APG27-2",
+    "name": "The 2nd Meeting of the APT Conference Preparatory Group for WRC-27 (APG27-2)",
+    "start": "2025-07-28",
+    "end": "2025-08-01",
+    "location": "Pattaya, Thailand",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "PRFP-18",
+    "name": "The 18th APT Policy and Regulation Forum for Pacific (PRFP-18)",
+    "start": "2025-08-05",
+    "end": "2025-08-06",
+    "location": "Suva, Fiji",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "The Meeting of the SATRC Worki",
+    "name": "The Meeting of the SATRC Working Group on Spectrum",
+    "start": "2025-08-12",
+    "end": "2025-08-14",
+    "location": "Maafushi Island, Maldives",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "AWG-35",
+    "name": "The 35th Meeting of the APT Wireless Group (AWG-35)",
+    "start": "2025-09-08",
+    "end": "2025-09-12",
+    "location": "Bangkok, Thailand",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "APT WTDC25-5",
+    "name": "The 5th Meeting of the APT Preparatory Group for WTDC-25 (APT WTDC25-5)",
+    "start": "2025-09-15",
+    "end": "2025-09-19",
+    "location": "Bangkok, Thailand",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "The Meeting of the SATRC Worki",
+    "name": "The Meeting of the SATRC Working Group on Policy, Regulation and Services",
+    "start": "2025-09-23",
+    "end": "2025-09-25",
+    "location": "Colombo, Sri Lanka",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "PRF-25",
+    "name": "The 25th APT Policy and Regulatory Forum (PRF-25)",
+    "start": "2025-09-30",
+    "end": "2025-10-02",
+    "location": "Bangkok, Thailand",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "ADF-22",
+    "name": "The 22nd APT Telecommunication/ICT Development Forum (ADF-22)",
+    "start": "2025-10-14",
+    "end": "2025-10-16",
+    "location": "Bangkok, Thailand",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "WGMC-13",
+    "name": "The 13th Meeting of the Working Group of Management Committee on APT Legal Instruments (WGMC-13)",
+    "start": "2025-10-28",
+    "end": "2025-10-29",
+    "location": "Virtual/Online Meeting",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "SATRC-26",
+    "name": "The 26th Meeting of the South Asian Telecommunication Regulators’ Council (SATRC-26)",
+    "start": "2025-11-05",
+    "end": "2025-11-07",
+    "location": "Islamabad, Pakistan",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "SPA-2025",
+    "name": "Seminar on Progress in APT for the year 2025 (SPA-2025)",
+    "start": "2025-12-08",
+    "end": "2025-12-08",
+    "location": "Bangkok, Thailand",
+    "cat": "apt"
+  },
+  {
+    "org": "APT",
+    "group": "MC-49",
+    "name": "The 49th Session of the Management Committee of the APT (MC-49)",
+    "start": "2025-12-09",
+    "end": "2025-12-12",
+    "location": "Bangkok, Thailand",
+    "cat": "apt"
+  },
+  {
+    "org": "ATU",
+    "group": "47th ATU Telecommunications /ICT Day",
+    "name": "47th ATU Telecommunications /ICT Day",
+    "start": "2024-12-07",
+    "end": "2024-12-07",
+    "location": "E-Meeting – Nairobi",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "1st African Preparatory Meeting for WRC-",
+    "name": "1st African Preparatory Meeting for WRC-27 (APM27-1 for WRC-27) in Maseru – Lesotho",
+    "start": "2024-07-30",
+    "end": "2024-08-02",
+    "location": "Lesotho",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "3rd and Final African Preparatory Meetin",
+    "name": "3rd and Final African Preparatory Meeting for WTSA-24 (APM24-3) in Sandton City, Radisson Blu Hotel South Africa",
+    "start": "2024-08-12",
+    "end": "2024-08-16",
+    "location": "Sandton City",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "5th Annual Africa Cyber Defense Forum (A",
+    "name": "5th Annual Africa Cyber Defense Forum (ACDF), Kigali 2024 Forum, Rwanda organized in partnership with ATU, AFRALTI and ACDF",
+    "start": "2024-10-15",
+    "end": "2024-10-18",
+    "location": "Kigali",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "Africa Broadband Outlook 2024",
+    "name": "Africa Broadband Outlook 2024",
+    "start": "2024-11-11",
+    "end": "2024-11-11",
+    "location": "Cape Town",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "High Level Ministerial Forum on Building",
+    "name": "High Level Ministerial Forum on Building a Future-Oriented, Intelligent Digital Infrastructure for Africa on the sidelines of Africa Com in Cape Town – Physical",
+    "start": "2023-11-13",
+    "end": "2023-11-13",
+    "location": "Cape Town",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "Africa Cyber Defense Forum jointly with ",
+    "name": "Africa Cyber Defense Forum jointly with ACDF Secretariat in Kigali Rwanda – Physical",
+    "start": "2023-11-14",
+    "end": "2023-11-17",
+    "location": "Kigali",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "46th ATU Telecommunications/ICT Day – On",
+    "name": "46th ATU Telecommunications/ICT Day – Online",
+    "start": "2023-12-07",
+    "end": "2023-12-07",
+    "location": "E-Meeting – Nairobi",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "2nd ATU Preparatory meeting for WTSA-24 ",
+    "name": "2nd ATU Preparatory meeting for WTSA-24 and 1st Preparatory meeting for WTDC-25 at Weston Hotel – Nairobi, Kenya",
+    "start": "2024-02-05",
+    "end": "2024-02-09",
+    "location": "Weston Hotel – Nairobi",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "Award ceremony of the 3rd series of the ",
+    "name": "Award ceremony of the 3rd series of the ATU Africa Innovation Challenge (Hybrid)",
+    "start": "2024-02-09",
+    "end": "2024-02-09",
+    "location": "Africa Telecommunications Union",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "Working Group 1 &#038; 2 Meetings to pre",
+    "name": "Working Group 1 &#038; 2 Meetings to prepare input to the 3rd and final preparatory meeting for WTSA-24",
+    "start": "2024-04-15",
+    "end": "2024-04-16",
+    "location": "E-Meeting – Nairobi",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "25th Session of the ATU Administrative C",
+    "name": "25th Session of the ATU Administrative Council in Kinshasa, DRC",
+    "start": "2024-07-08",
+    "end": "2024-07-10",
+    "location": "Kinshasa – DRC",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "2nd African Preparatory Meeting for WTDC",
+    "name": "2nd African Preparatory Meeting for WTDC-25 and 1st African Preparatory Meeting (APM26-1) for PP-26",
+    "start": "2024-07-15",
+    "end": "2024-07-19",
+    "location": "Droombos Vineyard Country Hotel – Windhoek",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "4th APM23-4 for WRC-23 in Cameroon",
+    "name": "4th APM23-4 for WRC-23 in Cameroon",
+    "start": "2023-08-07",
+    "end": "2023-08-11",
+    "location": "Physical – Cameroon",
+    "cat": "atu"
+  },
+  {
+    "org": "ATU",
+    "group": "WGs 1&#038;2 meeting to consider Member ",
+    "name": "WGs 1&#038;2 meeting to consider Member States contributions to WTSA-24 preparations",
+    "start": "2023-09-04",
+    "end": "2023-09-04",
+    "location": "Africa Telecommunications Union",
+    "cat": "atu"
+  },
+  {
+    "org": "CITEL",
+    "group": "44 Meeting of COM/CITEL",
+    "name": "44 Meeting of COM/CITEL",
+    "start": "2026-03-19",
+    "end": "2026-03-19",
+    "location": "San Jose - Costa Rica",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "IX REGULAR MEETING OF THE ASSEMBLY OF CI",
+    "name": "IX REGULAR MEETING OF THE ASSEMBLY OF CITEL",
+    "start": "2026-03-16",
+    "end": "2026-03-19",
+    "location": "San Jose - Costa Rica",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "LIVE TRANSMISSION (ASSEMBLY) AND REMOTE ",
+    "name": "LIVE TRANSMISSION (ASSEMBLY) AND REMOTE PARTICIPATION (COM/CITEL only)",
+    "start": "2026-03-16",
+    "end": "2026-03-19",
+    "location": "San Jose - Costa Rica",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "Ah-hoc group on PCC.II Structure",
+    "name": "Ah-hoc group on PCC.II Structure",
+    "start": "2026-03-03",
+    "end": "2026-03-03",
+    "location": "TBD",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "Ad Hoc Statute and Regulations",
+    "name": "Ad Hoc Statute and Regulations",
+    "start": "2026-02-11",
+    "end": "2026-02-11",
+    "location": "Virtual - United States",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "43 Meeting of COM/CITEL",
+    "name": "43 Meeting of COM/CITEL",
+    "start": "2025-11-05",
+    "end": "2025-11-07",
+    "location": "Washington, DC - United States",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "4th. Interim Meeting WGCONF - Preparatio",
+    "name": "4th. Interim Meeting WGCONF - Preparation of CITEL for the WTDC-25",
+    "start": "2025-10-09",
+    "end": "2025-10-09",
+    "location": "VIRTUAL - United States",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "46 Meeting of PCC.II",
+    "name": "46 Meeting of PCC.II",
+    "start": "2025-09-29",
+    "end": "2025-10-03",
+    "location": "Salvador, Bahia - Brazil",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "47 Meeting of PCC.I",
+    "name": "47 Meeting of PCC.I",
+    "start": "2025-08-18",
+    "end": "2025-08-22",
+    "location": "Santiago - Chile",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "AD HOC GROUP FOR THE REVISION AND UPDATE",
+    "name": "AD HOC GROUP FOR THE REVISION AND UPDATE OF CCP.III/RES. 86 (XII-99) CONCERNING PROCEDURES FOR THE ORGANIZATION OF SEMINARS",
+    "start": "2025-08-06",
+    "end": "2025-08-06",
+    "location": "Zoom",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "3rd. Interim Meeting WGCONF - Preparatio",
+    "name": "3rd. Interim Meeting WGCONF - Preparation of CITEL for the WTDC-25",
+    "start": "2025-07-09",
+    "end": "2025-07-09",
+    "location": "VIRTUAL - United States",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "2nd. Interim Meeting WGCONF - Preparatio",
+    "name": "2nd. Interim Meeting WGCONF - Preparation of CITEL for the WTDC-25",
+    "start": "2025-06-10",
+    "end": "2025-06-10",
+    "location": "VIRTUAL - United States",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "45 Meeting of PCC.II",
+    "name": "45 Meeting of PCC.II",
+    "start": "2025-06-02",
+    "end": "2025-06-06",
+    "location": "Mexico City - Mexico",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "V Reunión Extraordinaria del COM/CITEL",
+    "name": "V Reunión Extraordinaria del COM/CITEL",
+    "start": "2025-04-03",
+    "end": "2025-04-04",
+    "location": "Asuncion - Paraguay",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "46 Meeting of PCC.I",
+    "name": "46 Meeting of PCC.I",
+    "start": "2025-04-03",
+    "end": "2025-04-04",
+    "location": "Asuncion - Paraguay",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "1st. Interim Meeting WGCONF - Preparatio",
+    "name": "1st. Interim Meeting WGCONF - Preparation of CITEL for the WTDC-25",
+    "start": "2025-02-26",
+    "end": "2025-02-26",
+    "location": "Virtual - United States",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "42 Meeting of COM/CITEL",
+    "name": "42 Meeting of COM/CITEL",
+    "start": "2024-11-19",
+    "end": "2024-11-21",
+    "location": "Bogota - Colombia",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "WGCONF at WTSA-24",
+    "name": "WGCONF at WTSA-24",
+    "start": "2024-10-14",
+    "end": "2024-10-24",
+    "location": "New Delhi - India",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "44 Meeting of PCC.II",
+    "name": "44 Meeting of PCC.II",
+    "start": "2024-09-22",
+    "end": "2024-09-27",
+    "location": "Merida - Mexico",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "Ad-hoc for the radiocommunication adviso",
+    "name": "Ad-hoc for the radiocommunication advisory group preparations",
+    "start": "2024-08-26",
+    "end": "2024-08-26",
+    "location": "TBD",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "45 Meeting of PCC.I",
+    "name": "45 Meeting of PCC.I",
+    "start": "2024-08-19",
+    "end": "2024-08-23",
+    "location": "João Pessoa - Brazil",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "4th. Interim Meeting - Preparation of CI",
+    "name": "4th. Interim Meeting - Preparation of CITEL for the WTSA-24 - WGCONF",
+    "start": "2024-07-22",
+    "end": "2024-07-22",
+    "location": "Virtual",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "44 Meeting of PCC.I",
+    "name": "44 Meeting of PCC.I",
+    "start": "2024-05-20",
+    "end": "2024-05-24",
+    "location": "Panama City - Panama",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "43 Meeting of PCC.II",
+    "name": "43 Meeting of PCC.II",
+    "start": "2024-04-15",
+    "end": "2024-04-19",
+    "location": "Uruguay",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "3rd. Interim Meeting (SI) - Preparation ",
+    "name": "3rd. Interim Meeting (SI) - Preparation of CITEL for the WTSA-24 - WGCONF",
+    "start": "2024-04-11",
+    "end": "2024-04-11",
+    "location": "TBD",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "2nd. Interim Meeting (WM) - Preparation ",
+    "name": "2nd. Interim Meeting (WM) - Preparation of CITEL for the WTSA-24 - WGCONF",
+    "start": "2024-03-20",
+    "end": "2024-03-20",
+    "location": "TBD",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "1st. Interim Meeting (WP) - Preparation ",
+    "name": "1st. Interim Meeting (WP) - Preparation of CITEL for the WTSA-24 - WGCONF",
+    "start": "2024-02-21",
+    "end": "2024-02-21",
+    "location": "TBD",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "41 Meeting of COM/CITEL",
+    "name": "41 Meeting of COM/CITEL",
+    "start": "2023-11-01",
+    "end": "2023-11-03",
+    "location": "Cartagena de Indias - Colombia",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "Second Special Meeting of PCC.II (Ad-hoc",
+    "name": "Second Special Meeting of PCC.II (Ad-hoc group on elaboration of IACs for the RA-23)",
+    "start": "2023-10-11",
+    "end": "2023-10-11",
+    "location": "Virtual",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "43 Meeting of PCC.I",
+    "name": "43 Meeting of PCC.I",
+    "start": "2023-10-02",
+    "end": "2023-10-06",
+    "location": "Asuncion - Paraguay",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "AD HOC GROUP FOR THE EVENTUAL DEVELOPMEN",
+    "name": "AD HOC GROUP FOR THE EVENTUAL DEVELOPMENT OF IACs FOR RA-23",
+    "start": "2023-09-22",
+    "end": "2023-09-22",
+    "location": "Virtual",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "42_CAN_23 - XLII Meeting of PCC.II",
+    "name": "42_CAN_23 - XLII Meeting of PCC.II",
+    "start": "2023-08-28",
+    "end": "2023-09-01",
+    "location": "Ottawa - Shaw Centre - Canada",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "1st. Interim Meeting (VIRTUAL): WG for t",
+    "name": "1st. Interim Meeting (VIRTUAL): WG for the Preparation and Follow-up of WTSA, WCIT and WTDC (WGCONF)",
+    "start": "2023-08-23",
+    "end": "2023-08-23",
+    "location": "Virtual - United States",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "AD HOC GROUP FOR THE EVENTUAL DEVELOPMEN",
+    "name": "AD HOC GROUP FOR THE EVENTUAL DEVELOPMENT OF IACs FOR RA-23",
+    "start": "2023-08-02",
+    "end": "2023-08-02",
+    "location": "TBD",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "Mentoring session 2",
+    "name": "Mentoring session 2",
+    "start": "2023-08-01",
+    "end": "2023-08-01",
+    "location": "TBD",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "Mentoring Session1",
+    "name": "Mentoring Session1",
+    "start": "2023-07-10",
+    "end": "2023-07-10",
+    "location": "TBD",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "41_MEX_23 - XLI Meeting of PCC.II",
+    "name": "41_MEX_23 - XLI Meeting of PCC.II",
+    "start": "2023-05-21",
+    "end": "2023-05-26",
+    "location": "TBD",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "42 Meeting of PCC.I",
+    "name": "42 Meeting of PCC.I",
+    "start": "2023-04-24",
+    "end": "2023-04-28",
+    "location": "Punta Cana - Dominican Republic",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "FOLLOW-UP TO THE ROADMAP FOR CONNECTING ",
+    "name": "FOLLOW-UP TO THE ROADMAP FOR CONNECTING THE UNCONNECTED IMPLEMENTATION AG/RES. 2966 (LI-O/21) THE ECUADORIAN CASE",
+    "start": "2023-03-20",
+    "end": "2023-03-20",
+    "location": "TBD",
+    "cat": "citel"
+  },
+  {
+    "org": "CITEL",
+    "group": "First Special Meeting of PCC.II (Ad-hoc ",
+    "name": "First Special Meeting of PCC.II (Ad-hoc group on elaboration of IACs for the CPM23-2)",
+    "start": "2023-03-09",
+    "end": "2023-03-09",
+    "location": "Virtual - United States",
+    "cat": "citel"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 3J/3K/3L/3M",
+    "name": "WP 3J, 3K, 3L, 3M - Radio-wave Propagation",
+    "start": "2026-06-15",
+    "end": "2026-06-25",
+    "location": "Geneva, Switzerland",
+    "cat": "sg3"
+  },
+  {
+    "org": "ITU-R",
+    "group": "WP 5A/5B/5C",
+    "name": "WP 5A, 5B, 5C - SG 5 Working Parties",
+    "start": "2026-11-16",
+    "end": "2026-11-27",
+    "location": "Geneva, Switzerland",
+    "cat": "sg5"
+  },
+  {
+    "org": "EC",
+    "group": "RSPG",
+    "name": "RSPG#69 - Radio Spectrum Policy Group",
+    "start": "2026-02-11",
+    "end": "2026-02-11",
+    "location": "Brussels, Belgium",
+    "cat": "ec"
+  },
+  {
+    "org": "EC",
+    "group": "RSPG",
+    "name": "RSPG#70 - Radio Spectrum Policy Group",
+    "start": "2026-06-16",
+    "end": "2026-06-16",
+    "location": "Brussels, Belgium",
+    "cat": "ec"
+  }
+];
+
+// Load custom meetings from localStorage
+const customMeetings = JSON.parse(localStorage.getItem('customMeetings') || '[]');
+customMeetings.forEach(m => meetings.push(m));
+
+function saveCustomMeetings() {
+  const custom = meetings.filter(m => m.custom);
+  localStorage.setItem('customMeetings', JSON.stringify(custom));
+}
+
+// Date range — compute bounds from meeting data
+const MIN_YEAR = 2024;
+const MAX_YEAR = Math.max(MIN_YEAR + 1, ...meetings.map(m => new Date(m.end).getFullYear()));
+const currentYear = new Date().getFullYear();
+let rangeStart = new Date(currentYear + '-01-01');
+let rangeEnd = new Date((currentYear + 1) + '-12-31');
+const today = new Date();
+const dayMs = 86400000;
+let totalDays = Math.ceil((rangeEnd - rangeStart) / dayMs);
+const basePxPerDay = 7;
+let pxPerDay = basePxPerDay;
+let zoomPct = 100;
+
+let activeFilter = 'all';
+let searchTerm = '';
+let currentView = 'gantt';
+let sortCol = 'start';
+let sortDir = 1;
+
+function dayOffset(dateStr) {
+  return Math.floor((new Date(dateStr) - rangeStart) / dayMs);
+}
+
+function inRange(m) {
+  return new Date(m.end) >= rangeStart && new Date(m.start) <= rangeEnd;
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function durationDays(start, end) {
+  return Math.max(1, Math.ceil((new Date(end) - new Date(start)) / dayMs) + 1);
+}
+
+function getBarClass(m) {
+  if (m.cat === 'custom') return 'custom';
+  if (m.cat === 'wrc') return 'wrc';
+  if (m.cat === 'cpg') return 'cpg';
+  if (m.cat === 'apt') return 'apt';
+  if (m.cat === 'atu') return 'atu';
+  if (m.cat === 'citel') return 'citel';
+  if (m.cat === 'ec') return 'ec';
+  if (m.cat === 'ecc') {
+    const g = (m.group || '').toUpperCase();
+    if (g.startsWith('FM') || g === 'WG FM' || g === 'CG-FS') return 'fm';
+    if (g.startsWith('SE') || g === 'WG SE') return 'se';
+    return 'ecc';
+  }
+  return m.cat || 'itu-r';
+}
+
+function matchesFilter(m) {
+  if (activeFilter === 'all') return true;
+  if (activeFilter === 'itu-r') return m.org === 'ITU-R' && m.cat !== 'wrc';
+  if (activeFilter === 'wrc') return m.cat === 'wrc';
+  if (activeFilter === 'cept') return m.org === 'ECC';
+  if (activeFilter === 'apt') return m.org === 'APT';
+  if (activeFilter === 'atu') return m.org === 'ATU';
+  if (activeFilter === 'citel') return m.org === 'CITEL';
+  if (activeFilter === 'ec') return m.org === 'EC';
+  return true;
+}
+
+function matchesSearch(m) {
+  if (!searchTerm) return true;
+  const s = searchTerm.toLowerCase();
+  return m.name.toLowerCase().includes(s) || m.group.toLowerCase().includes(s) || m.location.toLowerCase().includes(s);
+}
+
+function isVisible(m) { return matchesFilter(m) && matchesSearch(m); }
+
+function getISOWeek(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+function renderTimeline() {
+  const container = document.getElementById('timeline');
+  container.innerHTML = '';
+  const totalWidth = totalDays * pxPerDay;
+  container.style.width = totalWidth + 'px';
+
+  // Header block (months + weeks)
+  const headerBlock = document.createElement('div');
+  headerBlock.className = 'header-block';
+
+  // Month headers
+  const monthBar = document.createElement('div');
+  monthBar.className = 'month-headers';
+  let d = new Date(rangeStart);
+  while (d < rangeEnd) {
+    const mEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    const daysInMonth = mEnd.getDate();
+    const header = document.createElement('div');
+    header.className = 'month-header';
+    if (d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear()) {
+      header.classList.add('current');
+    }
+    header.style.width = (daysInMonth * pxPerDay) + 'px';
+    header.textContent = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+    monthBar.appendChild(header);
+    d = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+  }
+  headerBlock.appendChild(monthBar);
+
+  // Week number headers
+  const weekBar = document.createElement('div');
+  weekBar.className = 'week-headers';
+  const currentWeek = getISOWeek(today);
+  const currentWeekYear = today.getFullYear();
+  let wd = new Date(rangeStart);
+  // Align to first Monday
+  const firstDay = wd.getDay();
+  const offsetToMon = firstDay === 0 ? 1 : (firstDay === 1 ? 0 : 8 - firstDay);
+  if (offsetToMon > 0) {
+    const pad = document.createElement('div');
+    pad.className = 'week-header';
+    pad.style.width = (offsetToMon * pxPerDay) + 'px';
+    weekBar.appendChild(pad);
+  }
+  wd = new Date(rangeStart);
+  wd.setDate(wd.getDate() + offsetToMon);
+  while (wd < rangeEnd) {
+    const weekEnd = new Date(wd);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    const clipped = weekEnd > rangeEnd ? rangeEnd : weekEnd;
+    const days = Math.ceil((clipped - wd) / dayMs) + 1;
+    const wh = document.createElement('div');
+    wh.className = 'week-header';
+    const wn = getISOWeek(wd);
+    if (wn === currentWeek && wd.getFullYear() === currentWeekYear) wh.classList.add('current');
+    wh.style.width = (days * pxPerDay) + 'px';
+    wh.textContent = wn;
+    weekBar.appendChild(wh);
+    wd = new Date(wd);
+    wd.setDate(wd.getDate() + 7);
+  }
+  headerBlock.appendChild(weekBar);
+  container.appendChild(headerBlock);
+
+  // Week grid lines
+  const weekGrid = document.createElement('div');
+  weekGrid.className = 'week-grid';
+  let wgd = new Date(rangeStart);
+  wgd.setDate(wgd.getDate() + offsetToMon);
+  while (wgd < rangeEnd) {
+    const line = document.createElement('div');
+    line.className = 'week-line';
+    line.style.left = (dayOffset(wgd.toISOString().slice(0,10)) * pxPerDay) + 'px';
+    weekGrid.appendChild(line);
+    wgd.setDate(wgd.getDate() + 7);
+  }
+  container.appendChild(weekGrid);
+
+  // Today line
+  if (today >= rangeStart && today <= rangeEnd) {
+    const todayEl = document.createElement('div');
+    todayEl.className = 'today-line';
+    todayEl.style.left = (dayOffset(today.toISOString().slice(0, 10)) * pxPerDay) + 'px';
+    container.appendChild(todayEl);
+  }
+
+  // Group by org
+  const filtered = meetings.filter(isVisible);
+  const groups = [
+    { label: 'ITU-R Study Groups & Working Parties', cls: 'itu-r', items: filtered.filter(m => m.org === 'ITU-R' && m.cat !== 'wrc') },
+    { label: 'WRC / CPM / Preparatory', cls: 'itu-r', items: filtered.filter(m => m.cat === 'wrc') },
+    { label: 'European Commission', cls: 'ec', items: filtered.filter(m => m.org === 'EC') },
+    { label: 'CEPT (Europe)', cls: 'ecc', items: filtered.filter(m => m.org === 'ECC') },
+    { label: 'APT (Asia-Pacific)', cls: 'apt', items: filtered.filter(m => m.org === 'APT') },
+    { label: 'ATU (Africa)', cls: 'atu', items: filtered.filter(m => m.org === 'ATU') },
+    { label: 'CITEL (Americas)', cls: 'citel', items: filtered.filter(m => m.org === 'CITEL') },
+    { label: 'Custom', cls: 'custom', items: filtered.filter(m => m.cat === 'custom') },
+  ].map(g => ({ ...g, items: g.items.filter(inRange) })).filter(g => g.items.length > 0);
+
+  groups.forEach(g => {
+    const section = document.createElement('div');
+    section.className = 'org-section';
+    const label = document.createElement('div');
+    label.className = 'org-label ' + g.cls;
+    label.textContent = g.label;
+    section.appendChild(label);
+
+    // Simple row packing to avoid overlaps
+    const rows = [];
+    const sorted = [...g.items].sort((a, b) => new Date(a.start) - new Date(b.start));
+    sorted.forEach(m => {
+      const mStart = Math.max(0, dayOffset(m.start));
+      const mEnd = Math.min(totalDays, dayOffset(m.start) + durationDays(m.start, m.end));
+      let placed = false;
+      for (let r = 0; r < rows.length; r++) {
+        if (rows[r] <= mStart - 1) {
+          rows[r] = mEnd + 2;
+          renderBar(section, m, mStart, mEnd, r);
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        rows.push(mEnd + 2);
+        renderBar(section, m, mStart, mEnd, rows.length - 1);
+      }
+    });
+
+    section.style.height = (rows.length * 38 + 44) + 'px';
+    section.style.position = 'relative';
+    container.appendChild(section);
+  });
+
+  updateStats(filtered);
+}
+
+function renderBar(section, m, startPx, endPx, row) {
+  const rowEl = document.createElement('div');
+  rowEl.style.position = 'absolute';
+  rowEl.style.top = (36 + row * 38) + 'px';
+  rowEl.style.left = (startPx * pxPerDay) + 'px';
+  rowEl.style.width = Math.max(50, (endPx - startPx) * pxPerDay) + 'px';
+
+  const bar = document.createElement('div');
+  bar.className = 'meeting-bar ' + getBarClass(m);
+  const label = document.createElement('span');
+  label.style.overflow = 'hidden';
+  label.style.textOverflow = 'ellipsis';
+  label.style.minWidth = '0';
+  label.textContent = m.group + (durationDays(m.start, m.end) > 2 ? ' - ' + m.location.split(',')[0] : '');
+  bar.appendChild(label);
+  bar.style.width = '100%';
+  bar.style.minWidth = '50px';
+
+  bar.addEventListener('mouseenter', e => showTooltip(e, m));
+  bar.addEventListener('mousemove', e => moveTooltip(e));
+  bar.addEventListener('mouseleave', hideTooltip);
+
+  if (m.custom) {
+    const del = document.createElement('span');
+    del.className = 'bar-delete';
+    del.textContent = '\u00d7';
+    del.addEventListener('click', e => { e.stopPropagation(); deleteMeeting(m); });
+    bar.appendChild(del);
+  }
+
+  rowEl.appendChild(bar);
+  section.appendChild(rowEl);
+}
+
+function showTooltip(e, m) {
+  const tt = document.getElementById('tooltip');
+  const dur = durationDays(m.start, m.end);
+  tt.innerHTML = `
+    <div class="tt-title">${m.name}</div>
+    <div class="tt-row">Dates: <span>${formatDate(m.start)}${m.start !== m.end ? ' - ' + formatDate(m.end) : ''}</span></div>
+    <div class="tt-row">Duration: <span>${dur} day${dur > 1 ? 's' : ''}</span></div>
+    <div class="tt-row">Location: <span>${m.location}</span></div>
+    <div class="tt-row">Organization: <span>${m.org}</span></div>
+    <div class="tt-row">Group: <span>${m.group}</span></div>
+  `;
+  tt.classList.add('show');
+  moveTooltip(e);
+}
+
+function moveTooltip(e) {
+  const tt = document.getElementById('tooltip');
+  let x = e.clientX + 16;
+  let y = e.clientY - 10;
+  if (x + 340 > window.innerWidth) x = e.clientX - 356;
+  if (y + 160 > window.innerHeight) y = e.clientY - 160;
+  tt.style.left = x + 'px';
+  tt.style.top = y + 'px';
+}
+
+function hideTooltip() {
+  document.getElementById('tooltip').classList.remove('show');
+}
+
+function renderList() {
+  const tbody = document.getElementById('listBody');
+  const filtered = meetings.filter(isVisible);
+
+  filtered.sort((a, b) => {
+    let va, vb;
+    switch (sortCol) {
+      case 'org': va = a.org; vb = b.org; break;
+      case 'group': va = a.group; vb = b.group; break;
+      case 'name': va = a.name; vb = b.name; break;
+      case 'start': va = a.start; vb = b.start; break;
+      case 'end': va = a.end; vb = b.end; break;
+      case 'location': va = a.location; vb = b.location; break;
+    }
+    return va < vb ? -sortDir : va > vb ? sortDir : 0;
+  });
+
+  tbody.innerHTML = '';
+  filtered.forEach(m => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="org-badge ${getBarClass(m)}">${m.org}${m.cat === 'wrc' ? '/WRC' : m.cat === 'cpg' ? '/CPG' : ''}</span></td>
+      <td>${m.group}</td>
+      <td>${m.name}</td>
+      <td>${formatDate(m.start)}</td>
+      <td>${m.start !== m.end ? formatDate(m.end) : '-'}</td>
+      <td>${m.location}${m.custom ? '<span class="list-delete">\u00d7</span>' : ''}</td>`;
+    if (m.custom) {
+      tr.querySelector('.list-delete').addEventListener('click', () => deleteMeeting(m));
+    }
+    tbody.appendChild(tr);
+  });
+
+  updateStats(filtered);
+}
+
+function updateStats(filtered) {
+  const counts = {};
+  filtered.forEach(m => { counts[m.org] = (counts[m.org] || 0) + 1; });
+  const bar = document.getElementById('statsBar');
+  const statParts = Object.entries(counts).map(([org, n]) => `<div class="stat">${org}: <span>${n}</span></div>`).join('');
+  bar.innerHTML = `
+    <div class="stat">Showing <span>${filtered.length}</span> of ${meetings.length} meetings</div>
+    ${statParts}
+    <div class="sources">
+      Sources:
+      <a href="https://www.itu.int/en/events/Pages/Calendar-Events.aspx?sector=ITU-R" target="_blank" rel="noopener">ITU-R</a>
+      <a href="https://cept.org/ecc/meeting-calendar" target="_blank" rel="noopener">ECC</a>
+      <a href="https://apt.int/Event_list" target="_blank" rel="noopener">APT</a>
+      <a href="https://atuuat.africa/events/" target="_blank" rel="noopener">ATU</a>
+      <a href="https://oas.org/CITELEvents/en/Events" target="_blank" rel="noopener">CITEL</a>
+      <a href="https://digital-strategy.ec.europa.eu/en/policies/radio-spectrum-committee" target="_blank" rel="noopener">EC</a>
+    </div>
+  `;
+}
+
+function deleteMeeting(m) {
+  const idx = meetings.indexOf(m);
+  if (idx !== -1) {
+    meetings.splice(idx, 1);
+    saveCustomMeetings();
+    render();
+  }
+}
+
+function render() {
+  if (currentView === 'gantt') renderTimeline();
+  else renderList();
+}
+
+// Event handlers
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.filter;
+    render();
+  });
+});
+
+document.getElementById('search').addEventListener('input', e => {
+  searchTerm = e.target.value;
+  render();
+});
+
+document.querySelectorAll('.view-toggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.view-toggle button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentView = btn.dataset.view;
+    document.getElementById('timelineContainer').classList.toggle('hidden', currentView !== 'gantt');
+    document.getElementById('listView').classList.toggle('active', currentView === 'list');
+    render();
+  });
+});
+
+document.querySelectorAll('.list-table th').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.sort;
+    if (sortCol === col) sortDir *= -1;
+    else { sortCol = col; sortDir = 1; }
+    renderList();
+  });
+});
+
+// Zoom
+const zoomSteps = [50, 75, 100, 150, 200, 300];
+
+function setZoom(pct) {
+  const tc = document.getElementById('timelineContainer');
+  const scrollCenter = tc.scrollLeft + tc.clientWidth / 2;
+  const scrollRatio = scrollCenter / (totalDays * pxPerDay);
+
+  zoomPct = pct;
+  pxPerDay = basePxPerDay * (pct / 100);
+  document.getElementById('zoomLevel').textContent = pct + '%';
+  render();
+
+  const newWidth = totalDays * pxPerDay;
+  tc.scrollLeft = scrollRatio * newWidth - tc.clientWidth / 2;
+}
+
+document.getElementById('zoomIn').addEventListener('click', () => {
+  const idx = zoomSteps.indexOf(zoomPct);
+  if (idx < zoomSteps.length - 1) setZoom(zoomSteps[idx + 1]);
+});
+document.getElementById('zoomOut').addEventListener('click', () => {
+  const idx = zoomSteps.indexOf(zoomPct);
+  if (idx > 0) setZoom(zoomSteps[idx - 1]);
+});
+
+// Ctrl+scroll to zoom
+document.getElementById('timelineContainer').addEventListener('wheel', e => {
+  if (e.ctrlKey || e.metaKey) {
+    e.preventDefault();
+    const idx = zoomSteps.indexOf(zoomPct);
+    if (e.deltaY < 0 && idx < zoomSteps.length - 1) setZoom(zoomSteps[idx + 1]);
+    else if (e.deltaY > 0 && idx > 0) setZoom(zoomSteps[idx - 1]);
+  }
+}, { passive: false });
+
+// Date range controls
+function shiftRange(delta) {
+  const newStart = rangeStart.getFullYear() + delta;
+  const newEnd = rangeEnd.getFullYear() + delta;
+  if (newStart < MIN_YEAR || newEnd > MAX_YEAR) return;
+  rangeStart.setFullYear(newStart);
+  rangeEnd.setFullYear(newEnd);
+  totalDays = Math.ceil((rangeEnd - rangeStart) / dayMs);
+  document.getElementById('rangeLabel').textContent =
+    rangeStart.getFullYear() + '–' + rangeEnd.getFullYear();
+  document.getElementById('rangePrev').disabled = (newStart <= MIN_YEAR);
+  document.getElementById('rangeNext').disabled = (newEnd >= MAX_YEAR);
+  render();
+}
+document.getElementById('rangePrev').addEventListener('click', () => shiftRange(-1));
+document.getElementById('rangeNext').addEventListener('click', () => shiftRange(1));
+
+// Add meeting modal
+const overlay = document.getElementById('modalOverlay');
+
+document.getElementById('addBtn').addEventListener('click', () => {
+  document.getElementById('mOrg').value = 'ITU-R';
+  document.getElementById('mGroup').value = '';
+  document.getElementById('mName').value = '';
+  document.getElementById('mStart').value = '';
+  document.getElementById('mEnd').value = '';
+  document.getElementById('mLocation').value = '';
+  overlay.classList.add('show');
+});
+
+document.getElementById('modalCancel').addEventListener('click', () => {
+  overlay.classList.remove('show');
+});
+
+overlay.addEventListener('click', e => {
+  if (e.target === overlay) overlay.classList.remove('show');
+});
+
+document.getElementById('modalSave').addEventListener('click', () => {
+  const org = document.getElementById('mOrg').value;
+  const group = document.getElementById('mGroup').value.trim();
+  const name = document.getElementById('mName').value.trim();
+  const start = document.getElementById('mStart').value;
+  const end = document.getElementById('mEnd').value || start;
+  const location = document.getElementById('mLocation').value.trim();
+
+  if (!name || !start) return;
+
+  let cat = 'custom';
+  if (org === 'ITU-R') cat = 'itu-r';
+  else if (org === 'EC') cat = 'ec';
+  else if (org === 'ECC') cat = 'ecc';
+  else if (org === 'APT') cat = 'apt';
+  else if (org === 'ATU') cat = 'atu';
+  else if (org === 'CITEL') cat = 'citel';
+
+  const m = { org, group: group || name, name, start, end, location: location || 'TBD', cat, custom: true };
+  meetings.push(m);
+  saveCustomMeetings();
+  overlay.classList.remove('show');
+  render();
+});
+
+// Initial render
+document.getElementById('rangeLabel').textContent =
+  rangeStart.getFullYear() + '–' + rangeEnd.getFullYear();
+render();
+
+// Scroll to today
+setTimeout(() => {
+  if (today >= rangeStart && today <= rangeEnd) {
+    const offset = dayOffset(today.toISOString().slice(0, 10)) * pxPerDay;
+    document.getElementById('timelineContainer').scrollLeft = Math.max(0, offset - 200);
+  }
+}, 100);
+</script>
+</body>
+</html>

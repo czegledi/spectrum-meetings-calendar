@@ -574,7 +574,7 @@
 </div>
 
 <div class="static-fallback">
-  <div class="static-note">Last updated: 2026-03-30 13:18 &mdash; Download this file and open it in your browser for the full interactive calendar with timeline view, filters, search, and zoom.</div>
+  <div class="static-note">Last updated: 2026-03-30 13:22 &mdash; Download this file and open it in your browser for the full interactive calendar with timeline view, filters, search, and zoom.</div>
   <table class="list-table">
     <thead>
       <tr>
@@ -718,6 +718,7 @@
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <h2>Add Meeting</h2>
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg)">This meeting will only be visible in your browser and will not be shared with other users.</div>
     <div class="modal-row">
       <div class="modal-field">
         <label>Organization</label>
@@ -1016,11 +1017,11 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "FM51",
-    "name": "FM51 #62",
-    "start": "2026-06-24",
-    "end": "2026-06-25",
-    "location": "TBD",
+    "group": "SE40",
+    "name": "SE40#89",
+    "start": "2026-04-07",
+    "end": "2026-04-10",
+    "location": "ECO Office",
     "cat": "ecc"
   },
   {
@@ -1034,20 +1035,11 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "SE40",
-    "name": "SE40#89",
-    "start": "2026-04-07",
-    "end": "2026-04-10",
-    "location": "ECO Office",
-    "cat": "ecc"
-  },
-  {
-    "org": "ECC",
     "group": "FM51",
-    "name": "FM51 #63",
-    "start": "2026-09-02",
-    "end": "2026-09-03",
-    "location": "Germany [Berlin]",
+    "name": "FM51 #64",
+    "start": "2026-11-11",
+    "end": "2026-11-12",
+    "location": "ECO Office",
     "cat": "ecc"
   },
   {
@@ -1061,10 +1053,19 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "FM51",
-    "name": "FM51 #64",
-    "start": "2026-11-11",
-    "end": "2026-11-12",
+    "group": "SE40",
+    "name": "SE40 CG2#2 (WI SE40_49)",
+    "start": "2026-03-19",
+    "end": "2026-03-19",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40 CG1#2 (WI SE40_49)",
+    "start": "2026-03-16",
+    "end": "2026-03-17",
     "location": "ECO Office",
     "cat": "ecc"
   },
@@ -1079,11 +1080,11 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "SE40",
-    "name": "SE40 CG1#2 (WI SE40_49)",
-    "start": "2026-03-16",
-    "end": "2026-03-17",
-    "location": "ECO Office",
+    "group": "FM51",
+    "name": "FM51 #62",
+    "start": "2026-06-24",
+    "end": "2026-06-25",
+    "location": "TBD",
     "cat": "ecc"
   },
   {
@@ -1097,11 +1098,11 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "SE40",
-    "name": "SE40 CG2#2 (WI SE40_49)",
-    "start": "2026-03-19",
-    "end": "2026-03-19",
-    "location": "Web Meeting",
+    "group": "FM51",
+    "name": "FM51 #63",
+    "start": "2026-09-02",
+    "end": "2026-09-03",
+    "location": "Germany [Berlin]",
     "cat": "ecc"
   },
   {
@@ -6231,7 +6232,7 @@ function updateStats(filtered) {
   bar.innerHTML = `
     <div class="stat">Showing <span>${filtered.length}</span> of ${meetings.length} meetings</div>
     ${statParts}
-    <div class="updated stat">Updated: <span>2026-03-30 13:18</span></div>
+    <div class="updated stat">Updated: <span>2026-03-30 13:22</span></div>
     <div class="sources">
       Sources:
       <a href="https://www.itu.int/en/events/Pages/Calendar-Events.aspx?sector=ITU-R" target="_blank" rel="noopener">ITU-R</a>
@@ -6408,7 +6409,8 @@ document.getElementById('modalSave').addEventListener('click', () => {
 function escICS(s) { return s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n'); }
 
 function exportICS() {
-  const filtered = meetings.filter(isVisible);
+  const todayStr = today.toISOString().slice(0, 10);
+  const filtered = meetings.filter(m => isVisible(m) && m.end >= todayStr);
   if (!filtered.length) return;
   const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Spectrum Meetings Calendar//EN'];
   filtered.forEach(m => {

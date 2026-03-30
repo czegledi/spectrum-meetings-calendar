@@ -384,107 +384,6 @@
   }
   .add-btn:hover { background: rgba(80,200,120,0.2); border-color: rgba(80,200,120,0.6); }
 
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 200;
-    align-items: center;
-    justify-content: center;
-  }
-  .modal-overlay.show { display: flex; }
-  .modal {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 28px 32px;
-    width: 420px;
-    max-width: 90vw;
-    box-shadow: 0 16px 48px rgba(0,0,0,0.5);
-  }
-  .modal h2 {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 20px;
-  }
-  .modal-field {
-    margin-bottom: 14px;
-  }
-  .modal-field label {
-    display: block;
-    font-size: 12px;
-    color: var(--text-dim);
-    margin-bottom: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .modal-field input, .modal-field select {
-    width: 100%;
-    padding: 8px 10px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: var(--bg);
-    color: var(--text);
-    font-size: 13px;
-    font-family: inherit;
-  }
-  .modal-field input:focus, .modal-field select:focus {
-    outline: none;
-    border-color: var(--itu-r);
-  }
-  .modal-row {
-    display: flex;
-    gap: 12px;
-  }
-  .modal-row .modal-field { flex: 1; }
-  .modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 20px;
-  }
-  .modal-actions button {
-    padding: 8px 18px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--text-dim);
-    font-size: 13px;
-    cursor: pointer;
-    font-family: inherit;
-  }
-  .modal-actions button:hover { color: var(--text); border-color: #555; }
-  .modal-actions button.primary {
-    background: var(--itu-r);
-    border-color: var(--itu-r);
-    color: #fff;
-  }
-  .modal-actions button.primary:hover { background: #3a8eef; }
-
-  .meeting-bar.custom { background: rgba(80,200,120,0.2); border: 1px solid rgba(80,200,120,0.4); color: #80e8a0; }
-
-  .bar-delete {
-    margin-left: auto;
-    padding: 0 4px;
-    font-size: 16px;
-    line-height: 1;
-    cursor: pointer;
-    opacity: 0.6;
-    color: #ff6b6b;
-    flex-shrink: 0;
-  }
-  .meeting-bar:hover .bar-delete { opacity: 1; }
-  .bar-delete:hover { color: #ff4444; }
-  .list-delete {
-    margin-left: 8px;
-    cursor: pointer;
-    color: #ff6b6b;
-    font-size: 16px;
-    font-weight: bold;
-  }
-  .list-delete:hover { color: #ff4444; }
-  .org-badge.custom { background: rgba(80,200,120,0.15); color: #50c878; }
 
   .stats-bar {
     padding: 12px 32px;
@@ -526,8 +425,6 @@
     .stats-bar { padding: 10px 16px; gap: 12px; font-size: 11px; flex-direction: column; align-items: flex-start; }
     .stats-bar .updated { margin-left: 0; }
     .stats-bar .sources { flex-wrap: wrap; gap: 10px; }
-    .modal { padding: 20px; width: calc(100vw - 32px); }
-    .modal-row { flex-direction: column; gap: 0; }
     .tooltip { max-width: calc(100vw - 24px); }
     .org-label { font-size: 11px; }
     .meeting-bar { font-size: 11px; height: 26px; padding: 0 6px; }
@@ -550,7 +447,6 @@
       <button class="filter-btn atu" data-filter="atu">ATU</button>
       <button class="filter-btn citel" data-filter="citel">CITEL</button>
     </div>
-    <button class="add-btn" id="addBtn">+ Add</button>
     <button class="add-btn" id="exportBtn" style="border-color:rgba(74,158,255,0.4);background:rgba(74,158,255,0.1);color:var(--itu-r)">&#8595; Export</button>
     <div class="range-controls">
       <button class="zoom-btn" id="rangePrev" title="Previous year">&lt;</button>
@@ -574,7 +470,7 @@
 </div>
 
 <div class="static-fallback">
-  <div class="static-note">Last updated: 2026-03-30 13:22 &mdash; Download this file and open it in your browser for the full interactive calendar with timeline view, filters, search, and zoom.</div>
+  <div class="static-note">Last updated: 2026-03-30 13:25 &mdash; Download this file and open it in your browser for the full interactive calendar with timeline view, filters, search, and zoom.</div>
   <table class="list-table">
     <thead>
       <tr>
@@ -715,52 +611,6 @@
 <div class="stats-bar" id="statsBar"></div>
 <div class="tooltip" id="tooltip"></div>
 
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal">
-    <h2>Add Meeting</h2>
-    <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg)">This meeting will only be visible in your browser and will not be shared with other users.</div>
-    <div class="modal-row">
-      <div class="modal-field">
-        <label>Organization</label>
-        <select id="mOrg">
-          <option value="ITU-R">ITU-R</option>
-          <option value="EC">EC</option>
-          <option value="ECC">CEPT</option>
-          <option value="APT">APT</option>
-          <option value="ATU">ATU</option>
-          <option value="CITEL">CITEL</option>
-          <option value="Custom">Custom</option>
-        </select>
-      </div>
-      <div class="modal-field">
-        <label>Group</label>
-        <input type="text" id="mGroup" placeholder="e.g. WP 5A, FM44">
-      </div>
-    </div>
-    <div class="modal-field">
-      <label>Meeting Name</label>
-      <input type="text" id="mName" placeholder="e.g. WP 5A - Land mobile">
-    </div>
-    <div class="modal-row">
-      <div class="modal-field">
-        <label>Start Date</label>
-        <input type="date" id="mStart">
-      </div>
-      <div class="modal-field">
-        <label>End Date</label>
-        <input type="date" id="mEnd">
-      </div>
-    </div>
-    <div class="modal-field">
-      <label>Location</label>
-      <input type="text" id="mLocation" placeholder="e.g. Geneva, Switzerland">
-    </div>
-    <div class="modal-actions">
-      <button id="modalCancel">Cancel</button>
-      <button class="primary" id="modalSave">Add Meeting</button>
-    </div>
-  </div>
-</div>
 
 <script>
 document.body.classList.add('js-loaded');
@@ -1017,6 +867,24 @@ const meetings = [
   },
   {
     "org": "ECC",
+    "group": "FM51",
+    "name": "FM51 #61",
+    "start": "2026-04-21",
+    "end": "2026-04-22",
+    "location": "France [ETSI in Sophia Antipolis]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM51",
+    "name": "FM51 #62",
+    "start": "2026-06-24",
+    "end": "2026-06-25",
+    "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
     "group": "SE40",
     "name": "SE40#89",
     "start": "2026-04-07",
@@ -1027,10 +895,10 @@ const meetings = [
   {
     "org": "ECC",
     "group": "FM51",
-    "name": "FM51 #61",
-    "start": "2026-04-21",
-    "end": "2026-04-22",
-    "location": "France [ETSI in Sophia Antipolis]",
+    "name": "FM51 #63",
+    "start": "2026-09-02",
+    "end": "2026-09-03",
+    "location": "Germany [Berlin]",
     "cat": "ecc"
   },
   {
@@ -1044,47 +912,11 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "FM44",
-    "name": "FM44#94",
-    "start": "2026-05-19",
-    "end": "2026-05-22",
-    "location": "Ireland [Cork]",
-    "cat": "ecc"
-  },
-  {
-    "org": "ECC",
-    "group": "SE40",
-    "name": "SE40 CG2#2 (WI SE40_49)",
-    "start": "2026-03-19",
-    "end": "2026-03-19",
-    "location": "Web Meeting",
-    "cat": "ecc"
-  },
-  {
-    "org": "ECC",
     "group": "SE40",
     "name": "SE40 CG1#2 (WI SE40_49)",
     "start": "2026-03-16",
     "end": "2026-03-17",
     "location": "ECO Office",
-    "cat": "ecc"
-  },
-  {
-    "org": "ECC",
-    "group": "PTB",
-    "name": "PTB#4bis",
-    "start": "2026-04-20",
-    "end": "2026-04-21",
-    "location": "Web Meeting",
-    "cat": "cpg"
-  },
-  {
-    "org": "ECC",
-    "group": "FM51",
-    "name": "FM51 #62",
-    "start": "2026-06-24",
-    "end": "2026-06-25",
-    "location": "TBD",
     "cat": "ecc"
   },
   {
@@ -1098,11 +930,29 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "FM51",
-    "name": "FM51 #63",
-    "start": "2026-09-02",
-    "end": "2026-09-03",
-    "location": "Germany [Berlin]",
+    "group": "SE40",
+    "name": "SE40 CG2#2 (WI SE40_49)",
+    "start": "2026-03-19",
+    "end": "2026-03-19",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "PTB",
+    "name": "PTB#4bis",
+    "start": "2026-04-20",
+    "end": "2026-04-21",
+    "location": "Web Meeting",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#94",
+    "start": "2026-05-19",
+    "end": "2026-05-22",
+    "location": "Ireland [Cork]",
     "cat": "ecc"
   },
   {
@@ -5868,14 +5718,6 @@ const meetings = [
   }
 ];
 
-// Load custom meetings from localStorage
-const customMeetings = JSON.parse(localStorage.getItem('customMeetings') || '[]');
-customMeetings.forEach(m => meetings.push(m));
-
-function saveCustomMeetings() {
-  const custom = meetings.filter(m => m.custom);
-  localStorage.setItem('customMeetings', JSON.stringify(custom));
-}
 
 // Date range — compute bounds from meeting data
 const MIN_YEAR = 2024;
@@ -6058,7 +5900,6 @@ function renderTimeline() {
     { label: 'APT (Asia-Pacific)', cls: 'apt', items: filtered.filter(m => m.org === 'APT') },
     { label: 'ATU (Africa)', cls: 'atu', items: filtered.filter(m => m.org === 'ATU') },
     { label: 'CITEL (Americas)', cls: 'citel', items: filtered.filter(m => m.org === 'CITEL') },
-    { label: 'Custom', cls: 'custom', items: filtered.filter(m => m.cat === 'custom') },
   ].map(g => ({ ...g, items: g.items.filter(inRange) })).filter(g => g.items.length > 0);
 
   groups.forEach(g => {
@@ -6133,14 +5974,6 @@ function renderBar(section, m, startPx, endPx, row) {
     else { tt._currentMeeting = m; showTooltip(e, m); }
   });
 
-  if (m.custom) {
-    const del = document.createElement('span');
-    del.className = 'bar-delete';
-    del.textContent = '\u00d7';
-    del.addEventListener('click', e => { e.stopPropagation(); deleteMeeting(m); });
-    bar.appendChild(del);
-  }
-
   rowEl.appendChild(bar);
   section.appendChild(rowEl);
 }
@@ -6213,11 +6046,8 @@ function renderList() {
       <td>${m.name}</td>
       <td>${formatDate(m.start)}</td>
       <td>${m.start !== m.end ? formatDate(m.end) : '-'}</td>
-      <td>${m.location}${m.custom ? '<span class="list-delete">\u00d7</span>' : ''}</td>
+      <td>${m.location}</td>
       <td class="col-status">${m.status ? m.status.charAt(0).toUpperCase() + m.status.slice(1) : ''}</td>`;
-    if (m.custom) {
-      tr.querySelector('.list-delete').addEventListener('click', () => deleteMeeting(m));
-    }
     tbody.appendChild(tr);
   });
 
@@ -6232,7 +6062,7 @@ function updateStats(filtered) {
   bar.innerHTML = `
     <div class="stat">Showing <span>${filtered.length}</span> of ${meetings.length} meetings</div>
     ${statParts}
-    <div class="updated stat">Updated: <span>2026-03-30 13:22</span></div>
+    <div class="updated stat">Updated: <span>2026-03-30 13:25</span></div>
     <div class="sources">
       Sources:
       <a href="https://www.itu.int/en/events/Pages/Calendar-Events.aspx?sector=ITU-R" target="_blank" rel="noopener">ITU-R</a>
@@ -6243,15 +6073,6 @@ function updateStats(filtered) {
       <a href="https://digital-strategy.ec.europa.eu/en/policies/radio-spectrum-committee" target="_blank" rel="noopener">EC</a>
     </div>
   `;
-}
-
-function deleteMeeting(m) {
-  const idx = meetings.indexOf(m);
-  if (idx !== -1) {
-    meetings.splice(idx, 1);
-    saveCustomMeetings();
-    render();
-  }
 }
 
 function render() {
@@ -6358,52 +6179,6 @@ function shiftRange(delta) {
 }
 document.getElementById('rangePrev').addEventListener('click', () => shiftRange(-1));
 document.getElementById('rangeNext').addEventListener('click', () => shiftRange(1));
-
-// Add meeting modal
-const overlay = document.getElementById('modalOverlay');
-
-document.getElementById('addBtn').addEventListener('click', () => {
-  document.getElementById('mOrg').value = 'ITU-R';
-  document.getElementById('mGroup').value = '';
-  document.getElementById('mName').value = '';
-  document.getElementById('mStart').value = '';
-  document.getElementById('mEnd').value = '';
-  document.getElementById('mLocation').value = '';
-  overlay.classList.add('show');
-});
-
-document.getElementById('modalCancel').addEventListener('click', () => {
-  overlay.classList.remove('show');
-});
-
-overlay.addEventListener('click', e => {
-  if (e.target === overlay) overlay.classList.remove('show');
-});
-
-document.getElementById('modalSave').addEventListener('click', () => {
-  const org = document.getElementById('mOrg').value;
-  const group = document.getElementById('mGroup').value.trim();
-  const name = document.getElementById('mName').value.trim();
-  const start = document.getElementById('mStart').value;
-  const end = document.getElementById('mEnd').value || start;
-  const location = document.getElementById('mLocation').value.trim();
-
-  if (!name || !start) return;
-
-  let cat = 'custom';
-  if (org === 'ITU-R') cat = 'itu-r';
-  else if (org === 'EC') cat = 'ec';
-  else if (org === 'ECC') cat = 'ecc';
-  else if (org === 'APT') cat = 'apt';
-  else if (org === 'ATU') cat = 'atu';
-  else if (org === 'CITEL') cat = 'citel';
-
-  const m = { org, group: group || name, name, start, end, location: location || 'TBD', cat, custom: true };
-  meetings.push(m);
-  saveCustomMeetings();
-  overlay.classList.remove('show');
-  render();
-});
 
 // ICS export
 function escICS(s) { return s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n'); }

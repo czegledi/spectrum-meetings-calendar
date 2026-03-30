@@ -470,7 +470,7 @@
 </div>
 
 <div class="static-fallback">
-  <div class="static-note">Last updated: 2026-03-30 13:25 &mdash; Download this file and open it in your browser for the full interactive calendar with timeline view, filters, search, and zoom.</div>
+  <div class="static-note">Last updated: 2026-03-30 13:30 &mdash; Download this file and open it in your browser for the full interactive calendar with timeline view, filters, search, and zoom.</div>
   <table class="list-table">
     <thead>
       <tr>
@@ -895,6 +895,15 @@ const meetings = [
   {
     "org": "ECC",
     "group": "FM51",
+    "name": "FM51 #64",
+    "start": "2026-11-11",
+    "end": "2026-11-12",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM51",
     "name": "FM51 #63",
     "start": "2026-09-02",
     "end": "2026-09-03",
@@ -903,11 +912,20 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "FM51",
-    "name": "FM51 #64",
-    "start": "2026-11-11",
-    "end": "2026-11-12",
-    "location": "ECO Office",
+    "group": "FM44",
+    "name": "FM44#94",
+    "start": "2026-05-19",
+    "end": "2026-05-22",
+    "location": "Ireland [Cork]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40 CG2#2 (WI SE40_49)",
+    "start": "2026-03-19",
+    "end": "2026-03-19",
+    "location": "Web Meeting",
     "cat": "ecc"
   },
   {
@@ -930,30 +948,12 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "SE40",
-    "name": "SE40 CG2#2 (WI SE40_49)",
-    "start": "2026-03-19",
-    "end": "2026-03-19",
-    "location": "Web Meeting",
-    "cat": "ecc"
-  },
-  {
-    "org": "ECC",
     "group": "PTB",
     "name": "PTB#4bis",
     "start": "2026-04-20",
     "end": "2026-04-21",
     "location": "Web Meeting",
     "cat": "cpg"
-  },
-  {
-    "org": "ECC",
-    "group": "FM44",
-    "name": "FM44#94",
-    "start": "2026-05-19",
-    "end": "2026-05-22",
-    "location": "Ireland [Cork]",
-    "cat": "ecc"
   },
   {
     "org": "APT",
@@ -6041,7 +6041,7 @@ function renderList() {
   filtered.forEach(m => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><span class="org-badge ${getBarClass(m)}">${m.org}${m.cat === 'wrc' ? '/WRC' : m.cat === 'cpg' ? '/CPG' : ''}</span></td>
+      <td><span class="org-badge ${getBarClass(m)}">${m.cat === 'wrc' ? 'WRC/CPM' : m.cat === 'cpg' ? 'CPG' : m.org}</span></td>
       <td class="col-group">${m.group}</td>
       <td>${m.name}</td>
       <td>${formatDate(m.start)}</td>
@@ -6062,7 +6062,7 @@ function updateStats(filtered) {
   bar.innerHTML = `
     <div class="stat">Showing <span>${filtered.length}</span> of ${meetings.length} meetings</div>
     ${statParts}
-    <div class="updated stat">Updated: <span>2026-03-30 13:25</span></div>
+    <div class="updated stat">Updated: <span>2026-03-30 13:30</span></div>
     <div class="sources">
       Sources:
       <a href="https://www.itu.int/en/events/Pages/Calendar-Events.aspx?sector=ITU-R" target="_blank" rel="noopener">ITU-R</a>

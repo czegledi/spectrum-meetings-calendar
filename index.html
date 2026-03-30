@@ -506,6 +506,32 @@
     transition: color 0.15s;
   }
   .stats-bar .sources a:hover { color: var(--text); text-decoration: underline; }
+
+  /* Mobile responsive */
+  @media (max-width: 768px) {
+    header { padding: 12px 16px; flex-direction: column; align-items: stretch; }
+    header h1 { font-size: 17px; }
+    .controls { gap: 6px; }
+    .search-box { width: 100%; }
+    .filter-scroll { display: flex; overflow-x: auto; gap: 6px; -webkit-overflow-scrolling: touch; padding-bottom: 4px; flex-shrink: 0; }
+    .filter-scroll::-webkit-scrollbar { display: none; }
+    .filter-btn { flex-shrink: 0; padding: 5px 10px; font-size: 12px; }
+    .add-btn { padding: 5px 10px; font-size: 12px; }
+    .timeline-container { padding: 8px 8px; }
+    .list-view { padding: 8px 8px; overflow-x: auto; }
+    .list-table { font-size: 12px; }
+    .list-table th, .list-table td { padding: 6px 8px; }
+    .list-table .col-group, .list-table .col-status { display: none; }
+    .static-fallback { padding: 12px 16px; }
+    .stats-bar { padding: 10px 16px; gap: 12px; font-size: 11px; flex-direction: column; align-items: flex-start; }
+    .stats-bar .updated { margin-left: 0; }
+    .stats-bar .sources { flex-wrap: wrap; gap: 10px; }
+    .modal { padding: 20px; width: calc(100vw - 32px); }
+    .modal-row { flex-direction: column; gap: 0; }
+    .tooltip { max-width: calc(100vw - 24px); }
+    .org-label { font-size: 11px; }
+    .meeting-bar { font-size: 11px; height: 26px; padding: 0 6px; }
+  }
 </style>
 </head>
 <body>
@@ -514,14 +540,16 @@
   <h1>Spectrum Meetings Calendar</h1>
   <div class="controls">
     <input type="text" class="search-box" id="search" placeholder="Search meetings...">
-    <button class="filter-btn active" data-filter="all">All</button>
-    <button class="filter-btn" data-filter="itu-r">ITU-R</button>
-    <button class="filter-btn wrc" data-filter="wrc">WRC/CPM</button>
-    <button class="filter-btn ec" data-filter="ec">EC</button>
-    <button class="filter-btn ecc" data-filter="cept">CEPT (Europe)</button>
-    <button class="filter-btn apt" data-filter="apt">APT</button>
-    <button class="filter-btn atu" data-filter="atu">ATU</button>
-    <button class="filter-btn citel" data-filter="citel">CITEL</button>
+    <div class="filter-scroll">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="itu-r">ITU-R</button>
+      <button class="filter-btn wrc" data-filter="wrc">WRC/CPM</button>
+      <button class="filter-btn ec" data-filter="ec">EC</button>
+      <button class="filter-btn ecc" data-filter="cept">CEPT</button>
+      <button class="filter-btn apt" data-filter="apt">APT</button>
+      <button class="filter-btn atu" data-filter="atu">ATU</button>
+      <button class="filter-btn citel" data-filter="citel">CITEL</button>
+    </div>
     <button class="add-btn" id="addBtn">+ Add</button>
     <button class="add-btn" id="exportBtn" style="border-color:rgba(74,158,255,0.4);background:rgba(74,158,255,0.1);color:var(--itu-r)">&#8595; Export</button>
     <div class="range-controls">
@@ -546,7 +574,7 @@
 </div>
 
 <div class="static-fallback">
-  <div class="static-note">Last updated: 2026-03-30 13:12 &mdash; Download this file and open it in your browser for the full interactive calendar with timeline view, filters, search, and zoom.</div>
+  <div class="static-note">Last updated: 2026-03-30 13:18 &mdash; Download this file and open it in your browser for the full interactive calendar with timeline view, filters, search, and zoom.</div>
   <table class="list-table">
     <thead>
       <tr>
@@ -672,12 +700,12 @@
     <thead>
       <tr>
         <th data-sort="org">Org</th>
-        <th data-sort="group">Group</th>
+        <th data-sort="group" class="col-group">Group</th>
         <th data-sort="name">Meeting</th>
         <th data-sort="start">Start</th>
         <th data-sort="end">End</th>
         <th data-sort="location">Location</th>
-        <th data-sort="status">Status</th>
+        <th data-sort="status" class="col-status">Status</th>
       </tr>
     </thead>
     <tbody id="listBody"></tbody>
@@ -989,28 +1017,19 @@ const meetings = [
   {
     "org": "ECC",
     "group": "FM51",
-    "name": "FM51 #61",
-    "start": "2026-04-21",
-    "end": "2026-04-22",
-    "location": "France [ETSI in Sophia Antipolis]",
-    "cat": "ecc"
-  },
-  {
-    "org": "ECC",
-    "group": "FM51",
-    "name": "FM51 #64",
-    "start": "2026-11-11",
-    "end": "2026-11-12",
-    "location": "ECO Office",
-    "cat": "ecc"
-  },
-  {
-    "org": "ECC",
-    "group": "FM51",
     "name": "FM51 #62",
     "start": "2026-06-24",
     "end": "2026-06-25",
     "location": "TBD",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM51",
+    "name": "FM51 #61",
+    "start": "2026-04-21",
+    "end": "2026-04-22",
+    "location": "France [ETSI in Sophia Antipolis]",
     "cat": "ecc"
   },
   {
@@ -1024,11 +1043,11 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "SE40",
-    "name": "SE40 CG2#2 (WI SE40_49)",
-    "start": "2026-03-19",
-    "end": "2026-03-19",
-    "location": "Web Meeting",
+    "group": "FM51",
+    "name": "FM51 #63",
+    "start": "2026-09-02",
+    "end": "2026-09-03",
+    "location": "Germany [Berlin]",
     "cat": "ecc"
   },
   {
@@ -1043,18 +1062,9 @@ const meetings = [
   {
     "org": "ECC",
     "group": "FM51",
-    "name": "FM51 #63",
-    "start": "2026-09-02",
-    "end": "2026-09-03",
-    "location": "Germany [Berlin]",
-    "cat": "ecc"
-  },
-  {
-    "org": "ECC",
-    "group": "SE40",
-    "name": "SE40 CG1#2 (WI SE40_49)",
-    "start": "2026-03-16",
-    "end": "2026-03-17",
+    "name": "FM51 #64",
+    "start": "2026-11-11",
+    "end": "2026-11-12",
     "location": "ECO Office",
     "cat": "ecc"
   },
@@ -1069,11 +1079,29 @@ const meetings = [
   },
   {
     "org": "ECC",
+    "group": "SE40",
+    "name": "SE40 CG1#2 (WI SE40_49)",
+    "start": "2026-03-16",
+    "end": "2026-03-17",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
     "group": "WG FM",
     "name": "WG FM #115 Czech Republic",
     "start": "2027-02-08",
     "end": "2027-02-12",
     "location": "Czech Republic [TBD]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40 CG2#2 (WI SE40_49)",
+    "start": "2026-03-19",
+    "end": "2026-03-19",
+    "location": "Web Meeting",
     "cat": "ecc"
   },
   {
@@ -6097,6 +6125,12 @@ function renderBar(section, m, startPx, endPx, row) {
   bar.addEventListener('mouseenter', e => showTooltip(e, m));
   bar.addEventListener('mousemove', e => moveTooltip(e));
   bar.addEventListener('mouseleave', hideTooltip);
+  bar.addEventListener('click', e => {
+    e.stopPropagation();
+    const tt = document.getElementById('tooltip');
+    if (tt.classList.contains('show') && tt._currentMeeting === m) { hideTooltip(); }
+    else { tt._currentMeeting = m; showTooltip(e, m); }
+  });
 
   if (m.custom) {
     const del = document.createElement('span');
@@ -6128,10 +6162,21 @@ function showTooltip(e, m) {
 
 function moveTooltip(e) {
   const tt = document.getElementById('tooltip');
-  let x = e.clientX + 16;
-  let y = e.clientY - 10;
-  if (x + 340 > window.innerWidth) x = e.clientX - 356;
-  if (y + 160 > window.innerHeight) y = e.clientY - 160;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  if (vw < 600) {
+    // Mobile: center horizontally near bottom
+    tt.style.left = Math.max(12, (vw - Math.min(tt.offsetWidth, vw - 24)) / 2) + 'px';
+    tt.style.top = '';
+    tt.style.bottom = '12px';
+    return;
+  }
+  tt.style.bottom = '';
+  const w = tt.offsetWidth, h = tt.offsetHeight;
+  let x = e.clientX + 16, y = e.clientY - 10;
+  if (x + w > vw - 8) x = e.clientX - w - 16;
+  if (x < 8) x = 8;
+  if (y + h > vh - 8) y = vh - h - 8;
+  if (y < 8) y = 8;
   tt.style.left = x + 'px';
   tt.style.top = y + 'px';
 }
@@ -6163,12 +6208,12 @@ function renderList() {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><span class="org-badge ${getBarClass(m)}">${m.org}${m.cat === 'wrc' ? '/WRC' : m.cat === 'cpg' ? '/CPG' : ''}</span></td>
-      <td>${m.group}</td>
+      <td class="col-group">${m.group}</td>
       <td>${m.name}</td>
       <td>${formatDate(m.start)}</td>
       <td>${m.start !== m.end ? formatDate(m.end) : '-'}</td>
       <td>${m.location}${m.custom ? '<span class="list-delete">\u00d7</span>' : ''}</td>
-      <td>${m.status ? m.status.charAt(0).toUpperCase() + m.status.slice(1) : ''}</td>`;
+      <td class="col-status">${m.status ? m.status.charAt(0).toUpperCase() + m.status.slice(1) : ''}</td>`;
     if (m.custom) {
       tr.querySelector('.list-delete').addEventListener('click', () => deleteMeeting(m));
     }
@@ -6186,7 +6231,7 @@ function updateStats(filtered) {
   bar.innerHTML = `
     <div class="stat">Showing <span>${filtered.length}</span> of ${meetings.length} meetings</div>
     ${statParts}
-    <div class="updated stat">Updated: <span>2026-03-30 13:12</span></div>
+    <div class="updated stat">Updated: <span>2026-03-30 13:18</span></div>
     <div class="sources">
       Sources:
       <a href="https://www.itu.int/en/events/Pages/Calendar-Events.aspx?sector=ITU-R" target="_blank" rel="noopener">ITU-R</a>
@@ -6391,10 +6436,16 @@ function exportICS() {
 
 document.getElementById('exportBtn').addEventListener('click', exportICS);
 
+// Tap outside to dismiss tooltip
+document.addEventListener('click', e => {
+  if (!e.target.closest('.meeting-bar') && !e.target.closest('.tooltip')) hideTooltip();
+});
+
 // Initial render
 document.getElementById('rangeLabel').textContent =
   rangeStart.getFullYear() + '–' + rangeEnd.getFullYear();
-render();
+// Mobile: start at 50% zoom for better overview
+if (window.innerWidth < 768) { setZoom(50); } else { render(); }
 
 // Scroll to today
 setTimeout(() => {

@@ -289,6 +289,8 @@
   .meeting-bar.sg5 { background: rgba(74,200,255,0.15); border-color: rgba(74,200,255,0.3); color: #8fd8ff; }
   .meeting-bar.sg6 { background: rgba(255,180,100,0.15); border-color: rgba(255,180,100,0.3); color: #ffc888; }
   .meeting-bar.sg7 { background: rgba(200,200,100,0.15); border-color: rgba(200,200,100,0.3); color: #d8d888; }
+  .meeting-bar.planned { border-style: dashed; opacity: 0.75; }
+  .status-icon { font-size: 11px; margin-right: 4px; opacity: 0.8; }
 
   .tooltip {
     display: none;
@@ -496,7 +498,8 @@
     align-items: center;
   }
   .stats-bar .stat span { color: var(--text); font-weight: 600; }
-  .stats-bar .sources { margin-left: auto; display: flex; gap: 16px; }
+  .stats-bar .updated { margin-left: auto; }
+  .stats-bar .sources { display: flex; gap: 16px; }
   .stats-bar .sources a {
     color: var(--text-dim);
     text-decoration: none;
@@ -520,6 +523,7 @@
     <button class="filter-btn atu" data-filter="atu">ATU</button>
     <button class="filter-btn citel" data-filter="citel">CITEL</button>
     <button class="add-btn" id="addBtn">+ Add</button>
+    <button class="add-btn" id="exportBtn" style="border-color:rgba(74,158,255,0.4);background:rgba(74,158,255,0.1);color:var(--itu-r)">&#8595; Export</button>
     <div class="range-controls">
       <button class="zoom-btn" id="rangePrev" title="Previous year">&lt;</button>
       <span class="range-label" id="rangeLabel"></span>
@@ -542,7 +546,7 @@
 </div>
 
 <div class="static-fallback">
-  <div class="static-note">Download this file and open it in your browser for the full interactive calendar with timeline view, filters, search, and zoom.</div>
+  <div class="static-note">Last updated: 2026-03-30 13:03 &mdash; Download this file and open it in your browser for the full interactive calendar with timeline view, filters, search, and zoom.</div>
   <table class="list-table">
     <thead>
       <tr>
@@ -675,6 +679,7 @@
         <th data-sort="start">Start</th>
         <th data-sort="end">End</th>
         <th data-sort="location">Location</th>
+        <th data-sort="status">Status</th>
       </tr>
     </thead>
     <tbody id="listBody"></tbody>
@@ -740,7 +745,8 @@ const meetings = [
     "start": "2026-04-22",
     "end": "2026-05-01",
     "location": "Geneva, Switzerland",
-    "cat": "sg4"
+    "cat": "sg4",
+    "status": "confirmed"
   },
   {
     "org": "ITU-R",
@@ -749,7 +755,8 @@ const meetings = [
     "start": "2026-04-29",
     "end": "2026-05-05",
     "location": "Geneva, Switzerland",
-    "cat": "sg4"
+    "cat": "sg4",
+    "status": "confirmed"
   },
   {
     "org": "ITU-R",
@@ -758,7 +765,8 @@ const meetings = [
     "start": "2026-05-04",
     "end": "2026-05-14",
     "location": "Geneva, Switzerland",
-    "cat": "sg4"
+    "cat": "sg4",
+    "status": "confirmed"
   },
   {
     "org": "ITU-R",
@@ -767,7 +775,8 @@ const meetings = [
     "start": "2026-05-15",
     "end": "2026-05-15",
     "location": "Geneva, Switzerland",
-    "cat": "sg4"
+    "cat": "sg4",
+    "status": "confirmed"
   },
   {
     "org": "ITU-R",
@@ -776,7 +785,8 @@ const meetings = [
     "start": "2026-05-18",
     "end": "2026-05-26",
     "location": "Geneva, Switzerland",
-    "cat": "sg5"
+    "cat": "sg5",
+    "status": "confirmed"
   },
   {
     "org": "ITU-R",
@@ -785,7 +795,8 @@ const meetings = [
     "start": "2026-05-18",
     "end": "2026-05-29",
     "location": "Geneva, Switzerland",
-    "cat": "sg5"
+    "cat": "sg5",
+    "status": "confirmed"
   },
   {
     "org": "ITU-R",
@@ -794,7 +805,8 @@ const meetings = [
     "start": "2026-05-19",
     "end": "2026-05-28",
     "location": "Geneva, Switzerland",
-    "cat": "sg5"
+    "cat": "sg5",
+    "status": "confirmed"
   },
   {
     "org": "ITU-R",
@@ -803,7 +815,8 @@ const meetings = [
     "start": "2026-05-27",
     "end": "2026-06-05",
     "location": "Geneva, Switzerland",
-    "cat": "sg5"
+    "cat": "sg5",
+    "status": "confirmed"
   },
   {
     "org": "ITU-R",
@@ -812,7 +825,8 @@ const meetings = [
     "start": "2026-06-15",
     "end": "2026-06-25",
     "location": "Geneva, Switzerland",
-    "cat": "sg3"
+    "cat": "sg3",
+    "status": "confirmed"
   },
   {
     "org": "ITU-R",
@@ -821,7 +835,8 @@ const meetings = [
     "start": "2026-06-15",
     "end": "2026-06-25",
     "location": "Geneva, Switzerland",
-    "cat": "sg3"
+    "cat": "sg3",
+    "status": "confirmed"
   },
   {
     "org": "ITU-R",
@@ -830,7 +845,8 @@ const meetings = [
     "start": "2026-06-15",
     "end": "2026-06-25",
     "location": "Geneva, Switzerland",
-    "cat": "sg3"
+    "cat": "sg3",
+    "status": "confirmed"
   },
   {
     "org": "ITU-R",
@@ -839,7 +855,8 @@ const meetings = [
     "start": "2026-09-28",
     "end": "2026-10-08",
     "location": "Geneva, Switzerland",
-    "cat": "sg5"
+    "cat": "sg5",
+    "status": "planned"
   },
   {
     "org": "ITU-R",
@@ -848,7 +865,8 @@ const meetings = [
     "start": "2026-10-07",
     "end": "2026-10-16",
     "location": "Geneva, Switzerland",
-    "cat": "sg4"
+    "cat": "sg4",
+    "status": "planned"
   },
   {
     "org": "ITU-R",
@@ -857,7 +875,8 @@ const meetings = [
     "start": "2026-10-14",
     "end": "2026-10-20",
     "location": "Geneva, Switzerland",
-    "cat": "sg4"
+    "cat": "sg4",
+    "status": "planned"
   },
   {
     "org": "ITU-R",
@@ -866,7 +885,8 @@ const meetings = [
     "start": "2026-10-19",
     "end": "2026-10-29",
     "location": "Geneva, Switzerland",
-    "cat": "sg4"
+    "cat": "sg4",
+    "status": "planned"
   },
   {
     "org": "ITU-R",
@@ -875,7 +895,8 @@ const meetings = [
     "start": "2026-10-30",
     "end": "2026-10-30",
     "location": "Geneva, Switzerland",
-    "cat": "sg4"
+    "cat": "sg4",
+    "status": "planned"
   },
   {
     "org": "ITU-R",
@@ -884,7 +905,8 @@ const meetings = [
     "start": "2026-11-16",
     "end": "2026-11-27",
     "location": "Geneva, Switzerland",
-    "cat": "sg5"
+    "cat": "sg5",
+    "status": "planned"
   },
   {
     "org": "ITU-R",
@@ -893,7 +915,8 @@ const meetings = [
     "start": "2026-11-16",
     "end": "2026-11-27",
     "location": "Geneva, Switzerland",
-    "cat": "sg5"
+    "cat": "sg5",
+    "status": "planned"
   },
   {
     "org": "ITU-R",
@@ -902,7 +925,8 @@ const meetings = [
     "start": "2026-11-16",
     "end": "2026-11-27",
     "location": "Geneva, Switzerland",
-    "cat": "sg5"
+    "cat": "sg5",
+    "status": "planned"
   },
   {
     "org": "ITU-R",
@@ -911,7 +935,8 @@ const meetings = [
     "start": "2026-11-30",
     "end": "2026-12-01",
     "location": "Geneva, Switzerland",
-    "cat": "sg5"
+    "cat": "sg5",
+    "status": "planned"
   },
   {
     "org": "ITU-R",
@@ -920,7 +945,8 @@ const meetings = [
     "start": "2026-12-07",
     "end": "2026-12-11",
     "location": "Geneva, Switzerland",
-    "cat": "wrc"
+    "cat": "wrc",
+    "status": "planned"
   },
   {
     "org": "ITU-R",
@@ -929,7 +955,8 @@ const meetings = [
     "start": "2026-12-14",
     "end": "2026-12-16",
     "location": "Geneva, Switzerland",
-    "cat": "wrc"
+    "cat": "wrc",
+    "status": "planned"
   },
   {
     "org": "ITU-R",
@@ -938,7 +965,8 @@ const meetings = [
     "start": "2027-04-05",
     "end": "2027-04-15",
     "location": "Geneva, Switzerland",
-    "cat": "wrc"
+    "cat": "wrc",
+    "status": "planned"
   },
   {
     "org": "ITU-R",
@@ -947,7 +975,8 @@ const meetings = [
     "start": "2027-10-11",
     "end": "2027-10-15",
     "location": "Shanghai, China",
-    "cat": "wrc"
+    "cat": "wrc",
+    "status": "confirmed"
   },
   {
     "org": "ITU-R",
@@ -956,7 +985,8 @@ const meetings = [
     "start": "2027-10-18",
     "end": "2027-11-12",
     "location": "Shanghai, China",
-    "cat": "wrc"
+    "cat": "wrc",
+    "status": "confirmed"
   },
   {
     "org": "ECC",
@@ -965,24 +995,6 @@ const meetings = [
     "start": "2026-06-24",
     "end": "2026-06-25",
     "location": "TBD",
-    "cat": "ecc"
-  },
-  {
-    "org": "ECC",
-    "group": "SE40",
-    "name": "SE40#89",
-    "start": "2026-04-07",
-    "end": "2026-04-10",
-    "location": "ECO Office",
-    "cat": "ecc"
-  },
-  {
-    "org": "ECC",
-    "group": "FM51",
-    "name": "FM51 #61",
-    "start": "2026-04-21",
-    "end": "2026-04-22",
-    "location": "France [ETSI in Sophia Antipolis]",
     "cat": "ecc"
   },
   {
@@ -1006,6 +1018,24 @@ const meetings = [
   {
     "org": "ECC",
     "group": "SE40",
+    "name": "SE40#89",
+    "start": "2026-04-07",
+    "end": "2026-04-10",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM44",
+    "name": "FM44#94",
+    "start": "2026-05-19",
+    "end": "2026-05-22",
+    "location": "Ireland [Cork]",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
     "name": "SE40 CG2#2 (WI SE40_49)",
     "start": "2026-03-19",
     "end": "2026-03-19",
@@ -1023,11 +1053,20 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "FM44",
-    "name": "FM44#94",
-    "start": "2026-05-19",
-    "end": "2026-05-22",
-    "location": "Ireland [Cork]",
+    "group": "PTB",
+    "name": "PTB#4bis",
+    "start": "2026-04-20",
+    "end": "2026-04-21",
+    "location": "Web Meeting",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "FM51",
+    "name": "FM51 #61",
+    "start": "2026-04-21",
+    "end": "2026-04-22",
+    "location": "France [ETSI in Sophia Antipolis]",
     "cat": "ecc"
   },
   {
@@ -1038,15 +1077,6 @@ const meetings = [
     "end": "2027-02-12",
     "location": "Czech Republic [TBD]",
     "cat": "ecc"
-  },
-  {
-    "org": "ECC",
-    "group": "PTB",
-    "name": "PTB#4bis",
-    "start": "2026-04-20",
-    "end": "2026-04-21",
-    "location": "Web Meeting",
-    "cat": "cpg"
   },
   {
     "org": "APT",
@@ -5851,7 +5881,7 @@ const basePxPerDay = 7;
 let pxPerDay = basePxPerDay;
 let zoomPct = 100;
 
-let activeFilter = 'all';
+let activeFilters = new Set(['all']);
 let searchTerm = '';
 let currentView = 'gantt';
 let sortCol = 'start';
@@ -5891,16 +5921,21 @@ function getBarClass(m) {
   return m.cat || 'itu-r';
 }
 
+function matchesOneFilter(f, m) {
+  if (f === 'itu-r') return m.org === 'ITU-R' && m.cat !== 'wrc';
+  if (f === 'wrc') return m.cat === 'wrc';
+  if (f === 'cept') return m.org === 'ECC';
+  if (f === 'apt') return m.org === 'APT';
+  if (f === 'atu') return m.org === 'ATU';
+  if (f === 'citel') return m.org === 'CITEL';
+  if (f === 'ec') return m.org === 'EC';
+  return false;
+}
+
 function matchesFilter(m) {
-  if (activeFilter === 'all') return true;
-  if (activeFilter === 'itu-r') return m.org === 'ITU-R' && m.cat !== 'wrc';
-  if (activeFilter === 'wrc') return m.cat === 'wrc';
-  if (activeFilter === 'cept') return m.org === 'ECC';
-  if (activeFilter === 'apt') return m.org === 'APT';
-  if (activeFilter === 'atu') return m.org === 'ATU';
-  if (activeFilter === 'citel') return m.org === 'CITEL';
-  if (activeFilter === 'ec') return m.org === 'EC';
-  return true;
+  if (activeFilters.has('all')) return true;
+  for (const f of activeFilters) { if (matchesOneFilter(f, m)) return true; }
+  return false;
 }
 
 function matchesSearch(m) {
@@ -6062,12 +6097,19 @@ function renderBar(section, m, startPx, endPx, row) {
   rowEl.style.width = Math.max(50, (endPx - startPx) * pxPerDay) + 'px';
 
   const bar = document.createElement('div');
-  bar.className = 'meeting-bar ' + getBarClass(m);
+  bar.className = 'meeting-bar ' + getBarClass(m) + (m.status === 'planned' ? ' planned' : '');
   const label = document.createElement('span');
   label.style.overflow = 'hidden';
   label.style.textOverflow = 'ellipsis';
   label.style.minWidth = '0';
-  label.textContent = m.group + (durationDays(m.start, m.end) > 2 ? ' - ' + m.location.split(',')[0] : '');
+  if (m.status) {
+    const icon = document.createElement('span');
+    icon.className = 'status-icon';
+    icon.textContent = m.status === 'confirmed' ? '\u2713' : '\u25cb';
+    icon.title = m.status;
+    label.appendChild(icon);
+  }
+  label.appendChild(document.createTextNode(m.group + (durationDays(m.start, m.end) > 2 ? ' - ' + m.location.split(',')[0] : '')));
   bar.appendChild(label);
   bar.style.width = '100%';
   bar.style.minWidth = '50px';
@@ -6098,6 +6140,7 @@ function showTooltip(e, m) {
     <div class="tt-row">Location: <span>${m.location}</span></div>
     <div class="tt-row">Organization: <span>${m.org}</span></div>
     <div class="tt-row">Group: <span>${m.group}</span></div>
+    ${m.status ? `<div class="tt-row">Status: <span>${m.status.charAt(0).toUpperCase() + m.status.slice(1)}</span></div>` : ''}
   `;
   tt.classList.add('show');
   moveTooltip(e);
@@ -6130,6 +6173,7 @@ function renderList() {
       case 'start': va = a.start; vb = b.start; break;
       case 'end': va = a.end; vb = b.end; break;
       case 'location': va = a.location; vb = b.location; break;
+      case 'status': va = a.status || ''; vb = b.status || ''; break;
     }
     return va < vb ? -sortDir : va > vb ? sortDir : 0;
   });
@@ -6143,7 +6187,8 @@ function renderList() {
       <td>${m.name}</td>
       <td>${formatDate(m.start)}</td>
       <td>${m.start !== m.end ? formatDate(m.end) : '-'}</td>
-      <td>${m.location}${m.custom ? '<span class="list-delete">\u00d7</span>' : ''}</td>`;
+      <td>${m.location}${m.custom ? '<span class="list-delete">\u00d7</span>' : ''}</td>
+      <td>${m.status ? m.status.charAt(0).toUpperCase() + m.status.slice(1) : ''}</td>`;
     if (m.custom) {
       tr.querySelector('.list-delete').addEventListener('click', () => deleteMeeting(m));
     }
@@ -6161,6 +6206,7 @@ function updateStats(filtered) {
   bar.innerHTML = `
     <div class="stat">Showing <span>${filtered.length}</span> of ${meetings.length} meetings</div>
     ${statParts}
+    <div class="updated stat">Updated: <span>2026-03-30 13:03</span></div>
     <div class="sources">
       Sources:
       <a href="https://www.itu.int/en/events/Pages/Calendar-Events.aspx?sector=ITU-R" target="_blank" rel="noopener">ITU-R</a>
@@ -6190,9 +6236,21 @@ function render() {
 // Event handlers
 document.querySelectorAll('.filter-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    activeFilter = btn.dataset.filter;
+    const f = btn.dataset.filter;
+    if (f === 'all') {
+      activeFilters = new Set(['all']);
+    } else {
+      activeFilters.delete('all');
+      if (activeFilters.has(f)) {
+        activeFilters.delete(f);
+        if (activeFilters.size === 0) activeFilters.add('all');
+      } else {
+        activeFilters.add(f);
+      }
+    }
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.toggle('active', activeFilters.has(b.dataset.filter));
+    });
     render();
   });
 });
@@ -6320,6 +6378,38 @@ document.getElementById('modalSave').addEventListener('click', () => {
   overlay.classList.remove('show');
   render();
 });
+
+// ICS export
+function escICS(s) { return s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n'); }
+
+function exportICS() {
+  const filtered = meetings.filter(isVisible);
+  if (!filtered.length) return;
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Spectrum Meetings Calendar//EN'];
+  filtered.forEach(m => {
+    const start = m.start.replace(/-/g, '');
+    // ICS all-day end is exclusive, so add 1 day
+    const endDate = new Date(m.end);
+    endDate.setDate(endDate.getDate() + 1);
+    const end = endDate.toISOString().slice(0, 10).replace(/-/g, '');
+    lines.push('BEGIN:VEVENT');
+    lines.push('DTSTART;VALUE=DATE:' + start);
+    lines.push('DTEND;VALUE=DATE:' + end);
+    lines.push('SUMMARY:' + escICS(m.name));
+    lines.push('LOCATION:' + escICS(m.location));
+    lines.push('DESCRIPTION:' + escICS(m.org + ' - ' + m.group + (m.status ? ' (' + m.status + ')' : '')));
+    lines.push('END:VEVENT');
+  });
+  lines.push('END:VCALENDAR');
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'spectrum-meetings.ics';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+document.getElementById('exportBtn').addEventListener('click', exportICS);
 
 // Initial render
 document.getElementById('rangeLabel').textContent =

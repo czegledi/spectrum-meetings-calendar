@@ -470,7 +470,7 @@
 </div>
 
 <div class="static-fallback">
-  <div class="static-note">Last updated: 2026-04-07 10:00 &mdash; Download this file and open it in your browser for the full interactive calendar with timeline view, filters, search, and zoom.</div>
+  <div class="static-note">Last updated: 2026-04-08 10:00 &mdash; Download this file and open it in your browser for the full interactive calendar with timeline view, filters, search, and zoom.</div>
   <table class="list-table">
     <thead>
       <tr>
@@ -868,20 +868,20 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "FM51",
-    "name": "FM51 #62",
-    "start": "2026-06-24",
-    "end": "2026-06-25",
-    "location": "TBD",
-    "cat": "ecc"
-  },
-  {
-    "org": "ECC",
     "group": "SE40",
     "name": "SE40#89",
     "start": "2026-04-07",
     "end": "2026-04-10",
     "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM51",
+    "name": "FM51 #62",
+    "start": "2026-06-24",
+    "end": "2026-06-25",
+    "location": "TBD",
     "cat": "ecc"
   },
   {
@@ -895,11 +895,11 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "FM51",
-    "name": "FM51 #64",
-    "start": "2026-11-11",
-    "end": "2026-11-12",
-    "location": "ECO Office",
+    "group": "SE40",
+    "name": "SE40 CG2#2 (WI SE40_49)",
+    "start": "2026-03-19",
+    "end": "2026-03-19",
+    "location": "Web Meeting",
     "cat": "ecc"
   },
   {
@@ -909,15 +909,6 @@ const meetings = [
     "start": "2026-09-02",
     "end": "2026-09-03",
     "location": "Germany [Berlin]",
-    "cat": "ecc"
-  },
-  {
-    "org": "ECC",
-    "group": "SE40",
-    "name": "SE40 CG2#2 (WI SE40_49)",
-    "start": "2026-03-19",
-    "end": "2026-03-19",
-    "location": "Web Meeting",
     "cat": "ecc"
   },
   {
@@ -940,21 +931,12 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "WG FM",
-    "name": "WG FM #115 Czech Republic",
-    "start": "2027-02-08",
-    "end": "2027-02-12",
-    "location": "Czech Republic [TBD]",
+    "group": "FM51",
+    "name": "FM51 #64",
+    "start": "2026-11-11",
+    "end": "2026-11-12",
+    "location": "ECO Office",
     "cat": "ecc"
-  },
-  {
-    "org": "ECC",
-    "group": "PTB",
-    "name": "PTB#4bis",
-    "start": "2026-04-20",
-    "end": "2026-04-21",
-    "location": "Web Meeting",
-    "cat": "cpg"
   },
   {
     "org": "ECC",
@@ -972,6 +954,24 @@ const meetings = [
     "start": "2026-05-12",
     "end": "2026-05-13",
     "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "PTB",
+    "name": "PTB#4bis",
+    "start": "2026-04-20",
+    "end": "2026-04-21",
+    "location": "Web Meeting",
+    "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "WG FM",
+    "name": "WG FM #115 Czech Republic",
+    "start": "2027-02-08",
+    "end": "2027-02-12",
+    "location": "Czech Republic [TBD]",
     "cat": "ecc"
   },
   {
@@ -6090,7 +6090,7 @@ function updateStats(filtered) {
   bar.innerHTML = `
     <div class="stat">Showing <span>${filtered.length}</span> of ${meetings.length} meetings</div>
     ${statParts}
-    <div class="updated stat">Updated: <span>2026-04-07 10:00</span></div>
+    <div class="updated stat">Updated: <span>2026-04-08 10:00</span></div>
     <div class="sources">
       Sources:
       <a href="https://www.itu.int/en/events/Pages/Calendar-Events.aspx?sector=ITU-R" target="_blank" rel="noopener">ITU-R</a>

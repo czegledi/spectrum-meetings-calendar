@@ -470,7 +470,7 @@
 </div>
 
 <div class="static-fallback">
-  <div class="static-note">Last updated: 2026-04-15 10:00 &mdash; Download this file and open it in your browser for the full interactive calendar with timeline view, filters, search, and zoom.</div>
+  <div class="static-note">Last updated: 2026-04-16 10:00 &mdash; Download this file and open it in your browser for the full interactive calendar with timeline view, filters, search, and zoom.</div>
   <table class="list-table">
     <thead>
       <tr>
@@ -865,11 +865,20 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "FM51",
-    "name": "FM51 #61",
-    "start": "2026-04-21",
-    "end": "2026-04-22",
-    "location": "France [ETSI in Sophia Antipolis]",
+    "group": "SE40",
+    "name": "SE40 CG2#2 (WI SE40_49)",
+    "start": "2026-03-19",
+    "end": "2026-03-19",
+    "location": "Web Meeting",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "SE40",
+    "name": "SE40#89",
+    "start": "2026-04-07",
+    "end": "2026-04-10",
+    "location": "ECO Office",
     "cat": "ecc"
   },
   {
@@ -884,9 +893,18 @@ const meetings = [
   {
     "org": "ECC",
     "group": "SE40",
-    "name": "SE40#89",
-    "start": "2026-04-07",
-    "end": "2026-04-10",
+    "name": "SE40 CG1#2 (WI SE40_49)",
+    "start": "2026-03-16",
+    "end": "2026-03-17",
+    "location": "ECO Office",
+    "cat": "ecc"
+  },
+  {
+    "org": "ECC",
+    "group": "FM51",
+    "name": "FM51 #64",
+    "start": "2026-11-11",
+    "end": "2026-11-12",
     "location": "ECO Office",
     "cat": "ecc"
   },
@@ -902,37 +920,37 @@ const meetings = [
   {
     "org": "ECC",
     "group": "SE40",
-    "name": "SE40 CG1#2 (WI SE40_49)",
-    "start": "2026-03-16",
-    "end": "2026-03-17",
-    "location": "ECO Office",
+    "name": "SE40#90",
+    "start": "2026-07-15",
+    "end": "2026-07-17",
+    "location": "Switzerland [Biel/Bienne]",
     "cat": "ecc"
   },
   {
     "org": "ECC",
-    "group": "SE40",
-    "name": "SE40 CG2#2 (WI SE40_49)",
-    "start": "2026-03-19",
-    "end": "2026-03-19",
+    "group": "FM62",
+    "name": "FM62 #04B - ECC Decision for PMR and PPDR",
+    "start": "2026-05-12",
+    "end": "2026-05-13",
     "location": "Web Meeting",
     "cat": "ecc"
   },
   {
     "org": "ECC",
-    "group": "FM44",
-    "name": "FM44#94",
-    "start": "2026-05-19",
-    "end": "2026-05-22",
-    "location": "Ireland [Cork]",
-    "cat": "ecc"
+    "group": "PTB",
+    "name": "PTB#4bis",
+    "start": "2026-04-20",
+    "end": "2026-04-21",
+    "location": "Web Meeting",
+    "cat": "cpg"
   },
   {
     "org": "ECC",
     "group": "FM51",
-    "name": "FM51 #64",
-    "start": "2026-11-11",
-    "end": "2026-11-12",
-    "location": "ECO Office",
+    "name": "FM51 #61",
+    "start": "2026-04-21",
+    "end": "2026-04-22",
+    "location": "France [ETSI in Sophia Antipolis]",
     "cat": "ecc"
   },
   {
@@ -955,29 +973,11 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "PTB",
-    "name": "PTB#4bis",
-    "start": "2026-04-20",
-    "end": "2026-04-21",
-    "location": "Web Meeting",
-    "cat": "cpg"
-  },
-  {
-    "org": "ECC",
-    "group": "FM62",
-    "name": "FM62 #04B - ECC Decision for PMR and PPDR",
-    "start": "2026-05-12",
-    "end": "2026-05-13",
-    "location": "Web Meeting",
-    "cat": "ecc"
-  },
-  {
-    "org": "ECC",
-    "group": "SE40",
-    "name": "SE40#90",
-    "start": "2026-07-15",
-    "end": "2026-07-17",
-    "location": "Switzerland [Biel/Bienne]",
+    "group": "FM44",
+    "name": "FM44#94",
+    "start": "2026-05-19",
+    "end": "2026-05-22",
+    "location": "Ireland [Cork]",
     "cat": "ecc"
   },
   {
@@ -6114,7 +6114,7 @@ function updateStats(filtered) {
   bar.innerHTML = `
     <div class="stat">Showing <span>${filtered.length}</span> of ${meetings.length} meetings</div>
     ${statParts}
-    <div class="updated stat">Updated: <span>2026-04-15 10:00</span></div>
+    <div class="updated stat">Updated: <span>2026-04-16 10:00</span></div>
     <div class="sources">
       Sources:
       <a href="https://www.itu.int/en/events/Pages/Calendar-Events.aspx?sector=ITU-R" target="_blank" rel="noopener">ITU-R</a>

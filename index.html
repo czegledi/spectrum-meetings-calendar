@@ -470,7 +470,7 @@
 </div>
 
 <div class="static-fallback">
-  <div class="static-note">Last updated: 2026-04-21 10:00 &mdash; Download this file and open it in your browser for the full interactive calendar with timeline view, filters, search, and zoom.</div>
+  <div class="static-note">Last updated: 2026-04-22 10:00 &mdash; Download this file and open it in your browser for the full interactive calendar with timeline view, filters, search, and zoom.</div>
   <table class="list-table">
     <thead>
       <tr>
@@ -483,7 +483,6 @@
       </tr>
     </thead>
     <tbody><tr><td><span class="org-badge citel">CITEL</span></td><td>47 Meeting of PCC.II</td><td>47 Meeting of PCC.II</td><td>6 Apr 2026</td><td>30 Apr 2026</td><td>Portsmouth - Dominica</td></tr>
-<tr><td><span class="org-badge cpg">ECC</span></td><td>PTB</td><td>PTB#4bis</td><td>20 Apr 2026</td><td>21 Apr 2026</td><td>Web Meeting</td></tr>
 <tr><td><span class="org-badge apt">APT</span></td><td>ASTAP-38</td><td>The 38th APT Standardization Program Forum (ASTAP-38)</td><td>20 Apr 2026</td><td>24 Apr 2026</td><td>Bangkok, Thailand</td></tr>
 <tr><td><span class="org-badge citel">CITEL</span></td><td>Remote Participation – 3ra. Session WGPP</td><td>Remote Participation – 3ra. Session WGPP (48 PCC.I - Panama)</td><td>20 Apr 2026</td><td>24 Apr 2026</td><td>Panama City - Panama</td></tr>
 <tr><td><span class="org-badge citel">CITEL</span></td><td>48 Meeting of PCC.I</td><td>48 Meeting of PCC.I</td><td>20 Apr 2026</td><td>24 Apr 2026</td><td>Panama City - Panama</td></tr>
@@ -908,15 +907,6 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "FM51",
-    "name": "FM51 #63",
-    "start": "2026-09-02",
-    "end": "2026-09-03",
-    "location": "Germany [Berlin]",
-    "cat": "ecc"
-  },
-  {
-    "org": "ECC",
     "group": "SE40",
     "name": "SE40 CG1#2 (WI SE40_49)",
     "start": "2026-03-16",
@@ -926,11 +916,11 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "FM44",
-    "name": "FM44#94",
-    "start": "2026-05-19",
-    "end": "2026-05-22",
-    "location": "Ireland [Cork]",
+    "group": "FM51",
+    "name": "FM51 #63",
+    "start": "2026-09-02",
+    "end": "2026-09-03",
+    "location": "Germany [Berlin]",
     "cat": "ecc"
   },
   {
@@ -944,11 +934,11 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "WG FM",
-    "name": "WG FM #115 Czech Republic",
-    "start": "2027-02-08",
-    "end": "2027-02-12",
-    "location": "Czech Republic [TBD]",
+    "group": "FM44",
+    "name": "FM44#94",
+    "start": "2026-05-19",
+    "end": "2026-05-22",
+    "location": "Ireland [Cork]",
     "cat": "ecc"
   },
   {
@@ -959,6 +949,15 @@ const meetings = [
     "end": "2026-04-21",
     "location": "Web Meeting",
     "cat": "cpg"
+  },
+  {
+    "org": "ECC",
+    "group": "WG FM",
+    "name": "WG FM #115 Czech Republic",
+    "start": "2027-02-08",
+    "end": "2027-02-12",
+    "location": "Czech Republic [TBD]",
+    "cat": "ecc"
   },
   {
     "org": "ECC",
@@ -1007,10 +1006,10 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "SE45",
-    "name": "SE45#34",
-    "start": "2026-09-02",
-    "end": "2026-09-04",
+    "group": "FM61",
+    "name": "FM61#17",
+    "start": "2026-07-01",
+    "end": "2026-07-03",
     "location": "To Be Decided",
     "cat": "ecc"
   },
@@ -1025,10 +1024,10 @@ const meetings = [
   },
   {
     "org": "ECC",
-    "group": "FM61",
-    "name": "FM61#17",
-    "start": "2026-07-01",
-    "end": "2026-07-03",
+    "group": "SE45",
+    "name": "SE45#34",
+    "start": "2026-09-02",
+    "end": "2026-09-04",
     "location": "To Be Decided",
     "cat": "ecc"
   },
@@ -6238,7 +6237,7 @@ function updateStats(filtered) {
   bar.innerHTML = `
     <div class="stat">Showing <span>${filtered.length}</span> of ${meetings.length} meetings</div>
     ${statParts}
-    <div class="updated stat">Updated: <span>2026-04-21 10:00</span></div>
+    <div class="updated stat">Updated: <span>2026-04-22 10:00</span></div>
     <div class="sources">
       Sources:
       <a href="https://www.itu.int/en/events/Pages/Calendar-Events.aspx?sector=ITU-R" target="_blank" rel="noopener">ITU-R</a>
